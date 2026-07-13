@@ -1,0 +1,100 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+<div class="container-fluid">
+
+    <div class="row">
+
+        <!-- RIGHT: CONTENT -->
+        <div class="col-md-10">
+
+            <h2 class="text-center text-primary">Run Time Viewer</h2>
+
+            <!-- TOOLBAR -->
+            <div class="d-flex gap-2 mb-3 justify-content-center">
+
+                <input type="date" class="form-control" style="width:150px" />
+                <select class="form-control" style="width:70px">
+                    <option>8</option>
+                </select>
+                <select class="form-control" style="width:70px">
+                    <option>00</option>
+                </select>
+
+                <span>~</span>
+
+                <input type="date" class="form-control" style="width:150px" />
+                <select class="form-control" style="width:70px">
+                    <option>15</option>
+                </select>
+                <select class="form-control" style="width:70px">
+                    <option>38</option>
+                </select>
+
+            </div>
+
+            <!-- CHART -->
+            <div class="card p-3 mb-3 shadow" style="max-width:500px; margin:auto;">
+                <h4 class="text-center">Run Time</h4>
+                <canvas id="pieChart"></canvas>
+            </div>
+
+            <!-- KPI BOX -->
+            <div class="border border-success p-3" style="max-width:700px; margin:auto;">
+
+                <div class="row">
+
+                    <div class="col-md-6">
+                        <p>Real Run Time: 33,325</p>
+                        <p>FWait Time: 862</p>
+                        <p>RWait Time: 18,856</p>
+                        <p>Down Time: 10,631</p>
+                        <p>Total Run Time: 63,674</p>
+                    </div>
+
+                    <div class="col-md-6">
+                        <p>Boards: 1,195</p>
+                        <p>Miss Rate: 0.27%</p>
+                        <p>Pickup: 166,581</p>
+                        <p>Total Miss: 451</p>
+                        <p>Working Rate: 52.34%</p>
+                    </div>
+
+                </div>
+
+                <p class="text-center">Average Cycle Time: 20.92 sec</p>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+    <script>
+        const ctx = document.getElementById('pieChart');
+
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['RealRun', 'FWait', 'RWait', 'Down'],
+                datasets: [{
+                    data: [52.34, 1.35, 29.61, 16.70],
+                    backgroundColor: [
+                        'green',
+                        'purple',
+                        'blue',
+                        'red'
+                    ]
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    </script>
+}

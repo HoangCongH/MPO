@@ -1,0 +1,200 @@
+html {
+  font-size: 10px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.report-workspace {
+  width: 100%;
+}
+
+.report-content {
+  min-width: 0;
+}
+.report-linecombo {
+    width: 260px;
+}
+.report-modelcombo {
+    width: 360px;
+}
+.production-report {
+  color: #0b0b0b;
+  font-family: Arial, Helvetica, sans-serif;
+  width: 100%;
+}
+
+.production-report__title {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.15;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.production-report__filter {
+  border: 2px solid #02a7ef;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 10px 16px;
+}
+
+.production-report__filter-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+.production-report__field {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  font-size: 10px;
+}
+
+.production-report__field label {
+  font-size: 15px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.production-report__field input,
+.production-report__field select {
+  background-color: #f7f7f7;
+  border: 3px solid #0f5f80;
+  color: #111;
+  font-size: 15px;
+  height: 30px;
+  min-width: 158px;
+  padding: 2px 8px;
+}
+
+.production-report__field input[type="time"] {
+  min-width: 158px;
+}
+
+.production-report__separator {
+  font-size: 15px;
+  margin-inline: 12px;
+}
+
+.production-report__button {
+  background-color: #04a842;
+  border: 0;
+  color: #050505;
+  font-size: 15px;
+  height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.production-report__button:hover {
+  background-color: #058938;
+}
+
+.production-report__table-wrap {
+  max-height: calc(100vh - 235px);
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+.production-report__table {
+  border-collapse: collapse;
+  table-layout: auto;
+  width: max-content;
+  min-width: 100%;
+}
+
+.production-report__table th {
+  background-color: #1b6b87;
+  border: 2px solid #c9dce5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  height: 54px;
+  line-height: 1.25;
+  padding: 4px 9px;
+  position: sticky;
+  top: 0;
+  text-align: left;
+  text-decoration-line: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: #d81d1d;
+  vertical-align: top;
+  z-index: 2;
+  white-space: nowrap;
+}
+
+.production-report__table td {
+  border: 2px solid #f7f9fb;
+  font-size: 14px;
+  height: 20px;
+  padding: 4px 9px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.production-report__empty-message {
+  color: #555;
+  font-style: italic;
+  text-align: center;
+}
+
+.production-report__table tbody tr:nth-child(odd) td {
+  background-color: #c8ced4;
+}
+
+.production-report__table tbody tr:nth-child(even) td {
+  background-color: #e4e8ec;
+}
+
+@media (max-width: 900px) {
+  .production-report__field label,
+  .production-report__field input,
+  .production-report__field select,
+  .production-report__button {
+    font-size: 18px;
+  }
+
+  .production-report__filter {
+    align-items: flex-start;
+  }
+
+  .production-report__filter-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .production-report__separator {
+    display: none;
+  }
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}

@@ -1,0 +1,11 @@
+@model MPO_Web_Prj.Models.Report.ProductionReportViewModel
+
+@{
+    ViewData["Title"] = "Production Report";
+}
+
+<section class="report-workspace">
+    <div class="report-content">
+        <partial name="~/Views/ProductionReport/_ProductionReportPanel.cshtml" model="Model" />
+    </div>
+</section>

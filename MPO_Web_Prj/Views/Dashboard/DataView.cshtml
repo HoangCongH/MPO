@@ -1,0 +1,285 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    <div class="container-fluid">
+
+        <div class="row">
+
+            <!-- SIDEBAR -->
+            @*<div class="col-md-2 border-end" style="height: 90vh; overflow:auto;">
+                <h5>DEMO</h5>
+
+                <ul>
+                    <li>
+                        F1
+                        <ul>
+                            <li>Line1</li>
+                            <li>
+                                Line2
+                                <ul>
+                                    <li>NPM-1</li>
+                                    <li>NPM-2</li>
+                                    <li>NPM-3</li>
+                                    <li>NPM-4</li>
+                                    <li style="background-color: lightgreen;">NPM-5</li>
+                                    <li>NPM-6</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>*@
+
+            <!-- MAIN CONTENT -->
+            <div class="col-md-10">
+
+                <!-- HEADER -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3>Data Views</h3>
+                    </div>
+
+                    <div class="card-body">
+
+                        <!-- FILTER -->
+                        <div class="row mb-3">
+
+                            <div class="col-auto">
+                                <input type="datetime-local" class="form-control" />
+                            </div>
+
+                            <div class="col-auto">
+                                <input type="datetime-local" class="form-control" />
+                            </div>
+
+                            <div class="col-auto">
+                                <select class="form-select">
+                                    <option>Run Time by machine per hour</option>
+                                    <option>Stop Time by machine per hour</option>
+                                </select>
+                            </div>
+
+                            <div class="col-auto">
+                                <button class="btn btn-primary">GO</button>
+                            </div>
+
+                            <div class="col-auto">
+                                <button class="btn btn-success">Export Excel</button>
+                            </div>
+                            <div class="col-auto">
+
+                                <form asp-action="AddMachine"
+                                      asp-controller="DataView"
+                                      method="post">
+
+                                    <button class="btn btn-warning">
+
+                                        Add
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        </div>
+
+                        <!-- CHART -->
+                        <div class="mb-4">
+                            <canvas id="runtimeChart" height="100"></canvas>
+                        </div>
+
+                        <!-- TABLE -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Machine</th>
+                                        <th>Time</th>
+                                        <th>Run %</th>
+                                        <th>Wait %</th>
+                                        <th>Stop %</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    <tr>
+                                        <td>LINE1_NPM-1</td>
+                                        <td>2025-06-10 08:00</td>
+                                        <td>38.9%</td>
+                                        <td>0%</td>
+                                        <td>51.8%</td>
+                                    </tr>
+
+                                    <tr>
+                                        <td>LINE1_NPM-2</td>
+                                        <td>2025-06-10 08:00</td>
+                                        <td>41.2%</td>
+                                        <td>0%</td>
+                                        <td>47.5%</td>
+                                    </tr>
+                                </tbody>
+
+                            </table>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        const ctx =
+        document.getElementById('runtimeChart');
+
+        new Chart(ctx,
+        {
+            type: 'line',
+
+            data:
+            {
+                labels:
+                [
+                    '08H',
+                    '09H',
+                    '10H',
+                    '11H',
+                    '12H'
+                ],
+
+                datasets:
+                [
+                    {
+                        label: 'LINE1_NPM-1',
+
+                        data:
+                        [
+                            38,
+                            44,
+                            35,
+                            48,
+                            28
+                        ]
+                    },
+
+                    {
+                        label: 'LINE1_NPM-2',
+
+                        data:
+                        [
+                            42,
+                            47,
+                            31,
+                            46,
+                            30
+                        ]
+                    }
+                ]
+            }
+        });
+
+    </script>
+    // <h2 class="text-center text-primary">Data Views</h2>
+
+    // <div class="row mb-3">
+
+    //     <div class="col-md-12 d-flex gap-2 align-items-center">
+
+    //         <!-- START DATE -->
+    //         <input type="date" class="form-control" style="width:150px" />
+    //         <select class="form-control" style="width:80px">
+    //             <option>8</option>
+    //         </select>
+    //         <select class="form-control" style="width:80px">
+    //             <option>00</option>
+    //         </select>
+
+    //         <span>~</span>
+
+    //         <!-- END DATE -->
+    //         <input type="date" class="form-control" style="width:150px" />
+    //         <select class="form-control" style="width:80px">
+    //             <option>8</option>
+    //         </select>
+    //         <select class="form-control" style="width:80px">
+    //             <option>00</option>
+    //         </select>
+
+    //         <!-- DROPDOWN -->
+    //         <select class="form-control" style="width:250px">
+    //             <option>Run Time by machine per hour</option>
+    //         </select>
+
+    //         <!-- BUTTON -->
+    //         <button class="btn btn-dark">GO</button>
+
+    //         <!-- EXPORT -->
+    //         <button class="btn btn-secondary">Export to Excel</button>
+
+    //     </div>
+
+    // </div>
+
+    // <!-- CHART -->
+    // <div class="card mb-3">
+    //     <div class="card-body">
+    //         <canvas id="chart"></canvas>
+    //     </div>
+    // </div>
+
+    // <!-- TABLE -->
+    // <table class="table table-bordered table-striped">
+    //     <thead class="table-primary">
+    //         <tr>
+    //             <th>Machine</th>
+    //             <th>Time</th>
+    //             <th>Run %</th>
+    //             <th>FWait %</th>
+    //             <th>RWait %</th>
+    //             <th>SWait %</th>
+    //             <th>PWait %</th>
+    //             <th>EWait %</th>
+    //             <th>Run/hr</th>
+    //             <th>Wait/hr</th>
+    //         </tr>
+    //     </thead>
+    //     <tbody id="tableBody">
+    //         <!-- data sẽ load sau -->
+    //     </tbody>
+    // </table>
+    // <script>
+    //     let chart;
+
+    //     function createChart() {
+
+    //         const ctx = document.getElementById("chart");
+
+    //         chart = new Chart(ctx, {
+    //             type: 'line',
+    //             data: {
+    //                 labels: ["08:00", "09:00", "10:00"],
+    //                 datasets: [
+    //                     {
+    //                         label: "LINE1_NPM-1",
+    //                         data: [30, 45, 50],
+    //                         borderWidth: 2
+    //                     },
+    //                     {
+    //                         label: "LINE1_NPM-2",
+    //                         data: [20, 35, 40],
+    //                         borderWidth: 2
+    //                     }
+    //                 ]
+    //             }
+    //         });
+    //     }
+
+    //     createChart();
+    // </script>
+
+}

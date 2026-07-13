@@ -1,0 +1,104 @@
+@model MPO_Web_Prj.Models.Report.ProductionReportViewModel
+
+<div class="production-report">
+    <h1 class="production-report__title">PRODUCTION REPORT</h1>
+
+    <form class="production-report__filter"
+          asp-controller="ProductionReport"
+          asp-action="Index"
+          method="get">
+        <div class="production-report__filter-row">
+            <div class="production-report__field">
+                <label asp-for="Filter.LineName">Line Name</label>
+                <select class="report-linecombo"
+                        asp-for="Filter.LineName"
+                        asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.LineName))">
+                </select>
+            </div>
+
+            <div class="production-report__field">
+                <label asp-for="Filter.ModelName">Model Name</label>
+                <select class="report-modelcombo"
+                        asp-for="Filter.ModelName"
+                        asp-items="@(new SelectList(Model.ModelOptions, "Value", "Text", Model.Filter.ModelName))">
+                </select>
+            </div>
+        </div>
+
+        <div class="production-report__filter-row">
+            <div class="production-report__field">
+                <label asp-for="Filter.StartDate">Start Time</label>
+                <input asp-for="Filter.StartDate" type="date" />
+                <input asp-for="Filter.StartTime" type="time" step="1" />
+            </div>
+
+            <span class="production-report__separator">-</span>
+
+            <div class="production-report__field">
+                <label asp-for="Filter.EndDate">End Time</label>
+                <input asp-for="Filter.EndDate" type="date" />
+                <input asp-for="Filter.EndTime" type="time" step="1" />
+            </div>
+
+            <button class="production-report__button" type="submit">Apply</button>
+
+            <button class="production-report__button"
+                    type="submit"
+                    asp-action="ExportExcel">
+                Export Excel
+            </button>
+        </div>
+    </form>
+
+    <div class="production-report__table-wrap">
+        <table class="production-report__table">
+            <thead>
+                <tr>
+                    <th>Line_Name</th>
+                    <th>Lane</th>
+                    <th>Model_name</th>
+                    <th>Group_name</th>
+                    <th>Produced<br />quantity (Panel)</th>
+                    <th>Produced<br />quantity (Pattern)</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LineName</td>
+                        <td>@row.Lane</td>
+                        <td>@row.ModelName</td>
+                        <td>@row.GroupName</td>
+                        <td>@row.ProducedQuantityPanel</td>
+                        <td>@row.ProducedQuantityPattern</td>
+                        <td>@row.Time?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td class="production-report__empty-message" colspan="7">
+                            No production data found for the selected filters.
+                        </td>
+                    </tr>
+                }
+
+                @for (var i = Model.Rows.Count; i < 8; i++)
+                {
+                    <tr class="production-report__empty-row">
+                        <td>&nbsp;</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
