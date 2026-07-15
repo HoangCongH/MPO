@@ -7,10 +7,6 @@ namespace MPO_Web_Prj.Data;
 
 public partial class AppDbContext : DbContext
 {
-    public AppDbContext()
-    {
-    }
-
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
@@ -23,10 +19,6 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<nozzle_log> nozzle_logs { get; set; }
 
     public virtual DbSet<production_report> production_reports { get; set; }
-
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +47,7 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.id).HasName("master_machines_pkey");
 
             entity.Property(e => e.id).HasMaxLength(50);
+            entity.Property(e => e.line).HasMaxLength(20);
             entity.Property(e => e.machine_name).HasMaxLength(50);
             entity.Property(e => e.machine_type).HasMaxLength(20);
             entity.Property(e => e.version).HasPrecision(10, 5);
@@ -89,7 +82,10 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.mjs_id, "idx_report_mjs_id");
 
-            entity.Property(e => e.cycle_times).HasColumnType("jsonb");
+            entity.Property(e => e.cycle_time_1).HasPrecision(10, 2);
+            entity.Property(e => e.cycle_time_2).HasPrecision(10, 2);
+            entity.Property(e => e.cycle_time_3).HasPrecision(10, 2);
+            entity.Property(e => e.file_name).HasMaxLength(255);
             entity.Property(e => e.lot_name).HasMaxLength(100);
             entity.Property(e => e.machine_id).HasMaxLength(50);
             entity.Property(e => e.mjs_id).HasMaxLength(100);
@@ -100,6 +96,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.time_actual).HasPrecision(10, 2);
             entity.Property(e => e.time_change).HasPrecision(10, 2);
             entity.Property(e => e.time_cperr).HasPrecision(10, 2);
+            entity.Property(e => e.time_crerr).HasPrecision(10, 2);
             entity.Property(e => e.time_fwait).HasPrecision(10, 2);
             entity.Property(e => e.time_load).HasPrecision(10, 2);
             entity.Property(e => e.time_mcrwait).HasPrecision(10, 2);
@@ -109,7 +106,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.time_prod).HasPrecision(10, 2);
             entity.Property(e => e.time_pwait).HasPrecision(10, 2);
             entity.Property(e => e.time_rwait).HasPrecision(10, 2);
+            entity.Property(e => e.time_scestop).HasPrecision(10, 2);
             entity.Property(e => e.time_total_stop).HasPrecision(10, 2);
+            entity.Property(e => e.time_trbl).HasPrecision(10, 2);
 
             entity.HasOne(d => d.machine).WithMany(p => p.production_reports)
                 .HasForeignKey(d => d.machine_id)

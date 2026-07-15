@@ -1,0 +1,115 @@
+@model MPO_Web_Prj.Models.Report.CycleTimeReportViewModel
+
+@{
+    ViewData["Title"] = "Cycle Time Report";
+    Layout = "_DashboardLayout";
+}
+
+<section class="pp-report">
+    <h1 class="pp-report__title">CYCLE TIME REPORT</h1>
+
+    <form class="pp-report__filter"
+          asp-controller="CycleTimeReport"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="Filter.LineName">Line Name</label>
+            <select class="report-linecombo"
+                    asp-for="Filter.LineName"
+                    asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.LineName))">
+            </select>
+        </div>
+
+        <div class="pp-report__field pp-report__field--part">
+            <label asp-for="Filter.ModelName">Model Name</label>
+            <select class="report-modelcombo"
+                    asp-for="Filter.ModelName"
+                    asp-items="@(new SelectList(Model.ModelOptions, "Value", "Text", Model.Filter.ModelName))">
+            </select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.StartDate">Start</label>
+            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.EndDate">End</label>
+            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+
+        <button class="pp-report__button"
+                type="submit"
+                asp-action="ExportExcel">
+            Export Excel
+        </button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="pp-report__table-wrap">
+        <table class="pp-report__table pp-report__table--cycle-time">
+            <colgroup>
+                <col style="width: 170px;" />
+                <col style="width: 240px;" />
+                <col style="width: 310px;" />
+                <col style="width: 150px;" />
+                <col style="width: 150px;" />
+                <col style="width: 150px;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Line Name</th>
+                    <th>Model name</th>
+                    <th>Group name</th>
+                    <th>Cycle<br />time 1</th>
+                    <th>Cycle<br />time 2</th>
+                    <th>Cycle<br />time 3</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LineName</td>
+                        <td>@row.ModelName</td>
+                        <td>@row.GroupName</td>
+                        <td>@row.CycleTime1</td>
+                        <td>@row.CycleTime2</td>
+                        <td>@row.CycleTime3</td>
+                    </tr>
+                }
+
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td class="pp-report__empty" colspan="6">
+                            No cycle time data found.
+                        </td>
+                    </tr>
+                }
+
+                @for (var i = Model.Rows.Count; i < 8; i++)
+                {
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

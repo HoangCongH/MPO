@@ -1,6 +1,6 @@
 ﻿namespace MPO_Web_Prj.Models.DataModel
 {
-    public class machine
+    public class Machine
     {
         public int machineid { get; set; }
 

@@ -1,0 +1,35 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "_DashboardLayout";
+}
+
+<section class="dashboard-home">
+    <h1>Dashboard</h1>
+
+    <div class="dashboard-home__grid">
+        <a class="dashboard-card" asp-controller="BoardCount" asp-action="Index">
+            <span class="dashboard-card__label">Board count</span>
+            <span class="dashboard-card__meta">Board count by line and lane</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="ProductionReport" asp-action="Index">
+            <span class="dashboard-card__label">Production Report</span>
+            <span class="dashboard-card__meta">Production quantity by line and model</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="PPReport_ByPart" asp-action="Index">
+            <span class="dashboard-card__label">Pick-Placement by Part</span>
+            <span class="dashboard-card__meta">SUM feeder counts and misses by part</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="PPReport_ByFeeder" asp-action="Index">
+            <span class="dashboard-card__label">Pick-Placement by Feeder</span>
+            <span class="dashboard-card__meta">SUM feeder counts and misses by feeder</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="PPReport_ByNozzle" asp-action="Index">
+            <span class="dashboard-card__label">Pick-Placement by Nozzle</span>
+            <span class="dashboard-card__meta">SUM nozzle counts and misses by nozzle slot</span>
+        </a>
+    </div>
+</section>

@@ -16,6 +16,7 @@ namespace MPO_Web_Prj.Controllers.Report
         [HttpGet("Index")]
         public async Task<IActionResult> Index([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
+            filter.IsApplied = Request.Query.Count > 0;
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
             return View(viewModel);
         }
@@ -23,36 +24,37 @@ namespace MPO_Web_Prj.Controllers.Report
         [HttpGet("ExportExcel")]
         public async Task<IActionResult> ExportExcel([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
+            filter.IsApplied = true;
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
-            var lines = new List<string>
+            var html = new System.Text.StringBuilder();
+            html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");
+            html.AppendLine("<tr><th>Line Name</th><th>Lane</th><th>Model name</th><th>Group_name</th><th>Produced quantity (Panel)</th><th>Produced quantity (Pattern)</th><th>Start Time</th><th>End Time</th></tr>");
+
+            foreach (var row in viewModel.Rows)
             {
-                "Line Name,Lane,Model name,Group_name,Produced quantity (Panel),Produced quantity (Pattern),Time"
-            };
-
-            lines.AddRange(viewModel.Rows.Select(row =>
-                string.Join(',',
-                    EscapeCsv(row.LineName),
-                    EscapeCsv(row.Lane),
-                    EscapeCsv(row.ModelName),
-                    EscapeCsv(row.GroupName),
-                    row.ProducedQuantityPanel,
-                    row.ProducedQuantityPattern,
-                    EscapeCsv(row.Time?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty))));
-
-            return File(
-                System.Text.Encoding.UTF8.GetBytes(string.Join(Environment.NewLine, lines)),
-                "text/csv",
-                $"ProductionReport_{DateTime.Now:yyyyMMddHHmmss}.csv");
-        }
-
-        private static string EscapeCsv(string value)
-        {
-            if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n'))
-            {
-                return value;
+                html.Append("<tr>");
+                html.Append($"<td>{Encode(row.LineName)}</td>");
+                html.Append($"<td>{Encode(row.Lane)}</td>");
+                html.Append($"<td>{Encode(row.ModelName)}</td>");
+                html.Append($"<td>{Encode(row.GroupName)}</td>");
+                html.Append($"<td>{row.ProducedQuantityPanel}</td>");
+                html.Append($"<td>{row.ProducedQuantityPattern}</td>");
+                html.Append($"<td>{Encode(row.StartTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty)}</td>");
+                html.Append($"<td>{Encode(row.EndTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? string.Empty)}</td>");
+                html.AppendLine("</tr>");
             }
 
-            return $"\"{value.Replace("\"", "\"\"")}\"";
+            html.AppendLine("</table></body></html>");
+
+            return File(
+                System.Text.Encoding.UTF8.GetBytes(html.ToString()),
+                "application/vnd.ms-excel",
+                $"ProductionReport_{DateTime.Now:yyyyMMddHHmmss}.xls");
+        }
+
+        private static string Encode(string value)
+        {
+            return System.Net.WebUtility.HtmlEncode(value);
         }
     }
 }

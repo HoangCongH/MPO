@@ -13,6 +13,8 @@ public partial class master_machine
 
     public decimal? version { get; set; }
 
+    public string? line { get; set; }
+
     public short? lane { get; set; }
 
     public short? stage { get; set; }

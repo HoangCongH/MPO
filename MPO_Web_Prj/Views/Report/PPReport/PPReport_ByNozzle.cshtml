@@ -1,5 +1,147 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@model MPO_Web_Prj.Models.Report.PickPlacementByNozzleViewModel
+
 @{
+    ViewData["Title"] = "Pick-Placement report by Nozzle";
+    Layout = "_DashboardLayout";
 }
+
+<section class="pp-report">
+    <h1 class="pp-report__title">PICK-PLACEMENT REPORT BY NOZZLE</h1>
+
+    <form class="pp-report__filter"
+          asp-controller="PPReport_ByNozzle"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="Filter.LineName">Line Name</label>
+            <select asp-for="Filter.LineName" asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.LineName))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.MachineName">Machine Name</label>
+            <select asp-for="Filter.MachineName" asp-items="@(new SelectList(Model.MachineNameOptions, "Value", "Text", Model.Filter.MachineName))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.Stage">Stage</label>
+            <select asp-for="Filter.Stage" asp-items="@(new SelectList(Model.StageOptions, "Value", "Text", Model.Filter.Stage))"></select>
+        </div>
+
+        <div class="pp-report__field pp-report__field--part">
+            <label asp-for="Filter.PartName">Nozzle Name</label>
+            <select asp-for="Filter.PartName" asp-items="@(new SelectList(Model.PartOptions, "Value", "Text", Model.Filter.PartName))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.NozzleSlot">Nozzle Slot</label>
+            <select asp-for="Filter.NozzleSlot" asp-items="@(new SelectList(Model.NozzleSlotOptions, "Value", "Text", Model.Filter.NozzleSlot))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.StartDate">Start</label>
+            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.EndDate">End</label>
+            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+
+        <button class="pp-report__button"
+                type="submit"
+                asp-action="ExportExcel">
+            Export Excel
+        </button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">@Model.ErrorMessage</div>
+    }
+
+    <div class="pp-report__table-wrap">
+        <table class="pp-report__table pp-report__table--wide">
+            <colgroup>
+                <col style="width: 145px;" />
+                <col style="width: 160px;" />
+                <col style="width: 90px;" />
+                <col style="width: 150px;" />
+                <col style="width: 125px;" />
+                <col style="width: 150px;" />
+                <col style="width: 120px;" />
+                <col style="width: 140px;" />
+                <col style="width: 120px;" />
+                <col style="width: 120px;" />
+                <col style="width: 120px;" />
+                <col style="width: 120px;" />
+                <col style="width: 120px;" />
+                <col style="width: 135px;" />
+                <col style="width: 150px;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Line<br />Name</th>
+                    <th>Machine<br />Name</th>
+                    <th>Stage</th>
+                    <th>Nozzle<br />Name</th>
+                    <th>Nozzle<br />slot</th>
+                    <th>Nozzle<br />Changer slot</th>
+                    <th>Pickup<br />count</th>
+                    <th>Placement<br />count</th>
+                    <th>Pickup<br />miss</th>
+                    <th>Recog<br />miss</th>
+                    <th>Height<br />miss</th>
+                    <th>Drop<br />miss</th>
+                    <th>Mount<br />miss</th>
+                    <th>Transfer<br />miss</th>
+                    <th>Scrap<br />ratio</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LineName</td>
+                        <td>@row.MachineName</td>
+                        <td>@row.Stage</td>
+                        <td>@row.PartName</td>
+                        <td>@row.NozzleSlot</td>
+                        <td>@row.NozzleChangerSlot</td>
+                        <td>@row.PickupCount</td>
+                        <td>@row.PlacementCount</td>
+                        <td>@row.PickupMiss</td>
+                        <td>@row.RecogMiss</td>
+                        <td>@row.HeightMiss</td>
+                        <td>@row.DropMiss</td>
+                        <td>@row.MountMiss</td>
+                        <td>@row.TransferMiss</td>
+                        <td>
+                            @row.ScrapRatio.ToString("N0")
+                            @if (row.HasPickupWithoutPlacement)
+                            {
+                                <span class="pp-report__ratio-warning">No placement</span>
+                            }
+                        </td>
+                    </tr>
+                }
+
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td class="pp-report__empty" colspan="15">No nozzle data found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pp-report__notes">
+        <p>Filter/Searchable: Line, Machine Name, Stage, Time range (Start/End), Nozzle Name, Nozzle Slot.</p>
+        <p>Counts and misses use each field value from nozzle_logs. Default order: Pickup count descending.</p>
+        <p>Scrap ratio = 10^6 * (1 - placement / pickup).</p>
+    </div>
+</section>

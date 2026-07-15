@@ -9,6 +9,8 @@ public partial class production_report
 
     public string? machine_id { get; set; }
 
+    public string? file_name { get; set; }
+
     public DateTime? report_date { get; set; }
 
     public string? mjs_id { get; set; }
@@ -45,7 +47,15 @@ public partial class production_report
 
     public decimal? time_mcrwait { get; set; }
 
+    public decimal? time_crerr { get; set; }
+
+    public decimal? time_scestop { get; set; }
+
+    public decimal? time_trbl { get; set; }
+
     public int? count_board { get; set; }
+
+    public int? count_module { get; set; }
 
     public int? count_pickup { get; set; }
 
@@ -55,9 +65,23 @@ public partial class production_report
 
     public int? count_m_miss { get; set; }
 
-    public string? other_rare_time_stats { get; set; }
+    public int? count_trbl { get; set; }
 
-    public string? cycle_times { get; set; }
+    public int? count_scestop { get; set; }
+
+    public int? count_crerr { get; set; }
+
+    public int? count_cperr { get; set; }
+
+    public int? count_pwait { get; set; }
+
+    public decimal? cycle_time_1 { get; set; }
+
+    public decimal? cycle_time_2 { get; set; }
+
+    public decimal? cycle_time_3 { get; set; }
+
+    public string? other_rare_time_stats { get; set; }
 
     public string? other_count_stats { get; set; }
 

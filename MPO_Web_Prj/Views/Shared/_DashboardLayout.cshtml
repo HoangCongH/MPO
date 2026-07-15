@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - MES Dashboard</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-shell">
+    <aside class="app-sidebar">
+        <a class="app-sidebar__brand" asp-controller="Dashboard" asp-action="Index">MES Dashboard</a>
+
+        <nav class="app-sidebar__nav">
+            <span class="app-sidebar__section">Charts</span>
+            <a asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">Dashboard</a>
+            <a asp-controller="BoardCount" asp-action="Index" data-nav-controller="BoardCount" data-nav-action="Index">Board count</a>
+
+            <span class="app-sidebar__section">Reports</span>
+            <a asp-controller="ProductionReport" asp-action="Index" data-nav-controller="ProductionReport" data-nav-action="Index">Production Report</a>
+            <a asp-controller="PPReport_ByPart" asp-action="Index" data-nav-controller="PPReport_ByPart" data-nav-action="Index">Pick-Placement by Part</a>
+            <a asp-controller="PPReport_ByFeeder" asp-action="Index" data-nav-controller="PPReport_ByFeeder" data-nav-action="Index">Pick-Placement by Feeder</a>
+            <a asp-controller="PPReport_ByNozzle" asp-action="Index" data-nav-controller="PPReport_ByNozzle" data-nav-action="Index">Pick-Placement by Nozzle</a>
+            <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">Cycle Time Report</a>
+        </nav>
+    </aside>
+
+    <main class="app-main">
+        @RenderBody()
+    </main>
+    <script>
+        (() => {
+            const pathParts = window.location.pathname.split('/').filter(Boolean);
+            const currentController = (pathParts[0] || 'Dashboard').toLowerCase();
+            const currentAction = (pathParts[1] || 'Index').toLowerCase();
+
+            document.querySelectorAll('.app-sidebar__nav a[data-nav-controller]').forEach(link => {
+                const linkController = (link.dataset.navController || '').toLowerCase();
+                const linkAction = (link.dataset.navAction || 'Index').toLowerCase();
+                const isDashboardRoot = currentController === 'dashboard'
+                    && currentAction === 'index'
+                    && linkController === 'dashboard'
+                    && linkAction === 'index';
+                const isCurrent = linkController === currentController
+                    && (linkAction === currentAction || (currentAction === 'index' && linkAction === 'index'));
+
+                if (isCurrent || isDashboardRoot) {
+                    link.classList.add('is-active');
+                    link.setAttribute('aria-current', 'page');
+                }
+
+                link.addEventListener('click', event => {
+                    if (window.mpoIsNavigating === true) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    window.mpoIsNavigating = true;
+                    window.setTimeout(() => {
+                        window.mpoIsNavigating = false;
+                    }, 1500);
+                });
+            });
+
+            document.querySelectorAll('form.pp-report__filter').forEach(form => {
+                const storageKey = `mpo-filter:${window.location.pathname.toLowerCase()}`;
+                const hasQuery = window.location.search.length > 1;
+
+                if (!hasQuery) {
+                    const storedQuery = sessionStorage.getItem(storageKey);
+                    if (storedQuery) {
+                        const values = new URLSearchParams(storedQuery);
+                        for (const [key, value] of values.entries()) {
+                            const field = form.elements.namedItem(key);
+                            if (!field) {
+                                continue;
+                            }
+
+                            if (typeof RadioNodeList !== 'undefined' && field instanceof RadioNodeList) {
+                                field.value = value;
+                                continue;
+                            }
+
+                            if (field.tagName === 'SELECT'
+                                && value
+                                && !Array.from(field.options).some(option => option.value === value)) {
+                                field.add(new Option(value, value, true, true));
+                            }
+
+                            field.value = value;
+                            field.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }
+                }
+
+                form.addEventListener('submit', event => {
+                    if (form.dataset.isSubmitting === 'true') {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    form.dataset.isSubmitting = 'true';
+
+                    const data = new FormData(form);
+                    const query = new URLSearchParams();
+
+                    for (const [key, value] of data.entries()) {
+                        if (value !== null && value !== '') {
+                            query.append(key, value.toString());
+                        }
+                    }
+
+                    sessionStorage.setItem(storageKey, query.toString());
+
+                    form.querySelectorAll('button[type="submit"], input[type="submit"]').forEach(button => {
+                        button.disabled = true;
+                        button.classList.add('is-loading');
+                    });
+                });
+            });
+        })();
+    </script>
+</body>
+</html>

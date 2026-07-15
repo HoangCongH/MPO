@@ -1,0 +1,181 @@
+@model MPO_Web_Prj.Models.Report.BoardCountChartViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Board count";
+    Layout = "_DashboardLayout";
+
+    var chartPayload = Model.Charts.Select(chart => new
+    {
+        lineName = chart.LineName,
+        labels = chart.Labels,
+        series = chart.Series.Select(series => new
+        {
+            laneName = series.LaneName,
+            values = series.Values
+        })
+    });
+}
+
+<section class="pp-report board-count-page">
+    <h1 class="pp-report__title">BOARD COUNT</h1>
+
+    <form class="pp-report__filter board-count-filter"
+          asp-controller="BoardCount"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="Filter.Type">Type</label>
+            <select asp-for="Filter.Type" id="boardCountType">
+                <option value="1">1 Line</option>
+                <option value="2">2 Line</option>
+                <option value="3">3 Line</option>
+                <option value="4">4 Line</option>
+            </select>
+        </div>
+
+        <div class="pp-report__field board-count-line-field" data-line-index="1">
+            <label asp-for="Filter.Line1">Line 1</label>
+            <select asp-for="Filter.Line1" asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.Line1))"></select>
+        </div>
+
+        <div class="pp-report__field board-count-line-field" data-line-index="2">
+            <label asp-for="Filter.Line2">Line 2</label>
+            <select asp-for="Filter.Line2" asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.Line2))"></select>
+        </div>
+
+        <div class="pp-report__field board-count-line-field" data-line-index="3">
+            <label asp-for="Filter.Line3">Line 3</label>
+            <select asp-for="Filter.Line3" asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.Line3))"></select>
+        </div>
+
+        <div class="pp-report__field board-count-line-field" data-line-index="4">
+            <label asp-for="Filter.Line4">Line 4</label>
+            <select asp-for="Filter.Line4" asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.Line4))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.StartDate">Start</label>
+            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <select asp-for="Filter.StartTime" asp-items="CreateHourOptions(Model.Filter.StartTime)"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.EndDate">End</label>
+            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <select asp-for="Filter.EndTime" asp-items="CreateHourOptions(Model.Filter.EndTime)"></select>
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">@Model.ErrorMessage</div>
+    }
+
+    <div class="board-count-grid board-count-grid--@Model.Filter.Type">
+        @for (var i = 0; i < Model.Charts.Count; i++)
+        {
+            <section class="board-count-chart">
+                <h2>@Model.Charts[i].LineName</h2>
+                <div class="board-count-chart__canvas">
+                    <canvas id="boardCountChart@(i)"></canvas>
+                </div>
+            </section>
+        }
+    </div>
+</section>
+
+<script>
+    const boardCountCharts = @Html.Raw(JsonSerializer.Serialize(chartPayload));
+    const boardCountColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
+
+    document.querySelectorAll('.board-count-line-field').forEach(field => {
+        const typeSelect = document.getElementById('boardCountType');
+        const syncVisibility = () => {
+            const activeCount = Number(typeSelect.value || 1);
+            const lineIndex = Number(field.dataset.lineIndex);
+            field.hidden = lineIndex > activeCount;
+        };
+
+        typeSelect.addEventListener('change', syncVisibility);
+        syncVisibility();
+    });
+
+    boardCountCharts.forEach((chart, index) => {
+        const canvas = document.getElementById(`boardCountChart${index}`);
+        if (!canvas) {
+            return;
+        }
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: chart.labels,
+                datasets: chart.series.map((series, seriesIndex) => ({
+                    label: series.laneName,
+                    data: series.values,
+                    backgroundColor: boardCountColors[seriesIndex % boardCountColors.length],
+                    borderWidth: 0,
+                    stack: 'board-count'
+                }))
+            },
+            options: {
+                animation: false,
+                maintainAspectRatio: false,
+                normalized: true,
+                responsive: true,
+                resizeDelay: 100,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10,
+                            font: { size: 13 }
+                        }
+                    },
+                    title: { display: false }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        bounds: 'ticks',
+                        ticks: {
+                            autoSkip: true,
+                            maxTicksLimit: 14,
+                            maxRotation: 45,
+                            minRotation: 45
+                        },
+                        grid: { display: false }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: '#d8dde2' }
+                    }
+                },
+                datasets: {
+                    bar: {
+                        maxBarThickness: 24
+                    }
+                }
+            }
+        });
+    });
+</script>
+
+@functions {
+    private static SelectList CreateHourOptions(TimeOnly? selectedTime)
+    {
+        var selectedValue = selectedTime.HasValue
+            ? $"{selectedTime.Value.Hour:00}:00"
+            : string.Empty;
+
+        var hours = Enumerable.Range(0, 24)
+            .Select(hour => $"{hour:00}:00")
+            .ToList();
+
+        return new SelectList(hours, selectedValue);
+    }
+}

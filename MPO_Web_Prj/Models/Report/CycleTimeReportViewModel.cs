@@ -1,19 +1,19 @@
 namespace MPO_Web_Prj.Models.Report;
 
-public class ProductionReportViewModel
+public class CycleTimeReportViewModel
 {
-    public ProductionReportFilter Filter { get; set; } = new();
+    public CycleTimeReportFilter Filter { get; set; } = new();
 
     public IReadOnlyList<ReportSelectOption> LineOptions { get; set; } = [];
 
     public IReadOnlyList<ReportSelectOption> ModelOptions { get; set; } = [];
 
-    public IReadOnlyList<ProductionReportRow> Rows { get; set; } = [];
+    public IReadOnlyList<CycleTimeReportRow> Rows { get; set; } = [];
 
     public string? ErrorMessage { get; set; }
 }
 
-public class ProductionReportFilter
+public class CycleTimeReportFilter
 {
     public bool IsApplied { get; set; }
 
@@ -30,28 +30,17 @@ public class ProductionReportFilter
     public TimeOnly? EndTime { get; set; }
 }
 
-public class ReportSelectOption
-{
-    public string Value { get; set; } = string.Empty;
-
-    public string Text { get; set; } = string.Empty;
-}
-
-public class ProductionReportRow
+public class CycleTimeReportRow
 {
     public string LineName { get; set; } = string.Empty;
-
-    public string Lane { get; set; } = string.Empty;
 
     public string ModelName { get; set; } = string.Empty;
 
     public string GroupName { get; set; } = string.Empty;
 
-    public long ProducedQuantityPanel { get; set; }
+    public decimal CycleTime1 { get; set; }
 
-    public long ProducedQuantityPattern { get; set; }
+    public decimal CycleTime2 { get; set; }
 
-    public DateTime? StartTime { get; set; }
-
-    public DateTime? EndTime { get; set; }
+    public decimal CycleTime3 { get; set; }
 }
