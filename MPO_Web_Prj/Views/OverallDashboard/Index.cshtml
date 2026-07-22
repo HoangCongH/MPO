@@ -1,0 +1,288 @@
+@model MPO_Web_Prj.Models.Report.OverallDashboardViewModel
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Overall Dashboard";
+    Layout = "_DashboardLayout";
+
+    var boardPayload = Model.BoardProduced.Charts.Select(chart => new
+    {
+        lineName = chart.LineName,
+        labels = chart.Labels,
+        series = chart.Series.Select(series => new
+        {
+            laneName = series.LaneName,
+            values = series.Values
+        })
+    });
+
+    var errorStopPayload = new
+    {
+        labels = Model.ErrorStopTime.Select(slice => slice.Label),
+        values = Model.ErrorStopTime.Select(slice => slice.Value)
+    };
+}
+
+<section class="pp-report overall-dashboard">
+    <h1 class="pp-report__title">OVERALL DASHBOARD</h1>
+
+    <form class="pp-report__filter board-count-filter"
+          asp-controller="OverallDashboard"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="BoardProduced.Filter.Type">Type</label>
+            <select asp-for="BoardProduced.Filter.Type" name="Type" id="overallDashboardType">
+                <option value="1">1 Line</option>
+                <option value="2">2 Line</option>
+                <option value="3">3 Line</option>
+                <option value="4">4 Line</option>
+            </select>
+        </div>
+
+        <div class="pp-report__field overall-dashboard-line-field" data-line-index="1">
+            <label asp-for="BoardProduced.Filter.Line1">Line 1</label>
+            <select asp-for="BoardProduced.Filter.Line1" name="Line1" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line1))"></select>
+        </div>
+
+        <div class="pp-report__field overall-dashboard-line-field" data-line-index="2">
+            <label asp-for="BoardProduced.Filter.Line2">Line 2</label>
+            <select asp-for="BoardProduced.Filter.Line2" name="Line2" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line2))"></select>
+        </div>
+
+        <div class="pp-report__field overall-dashboard-line-field" data-line-index="3">
+            <label asp-for="BoardProduced.Filter.Line3">Line 3</label>
+            <select asp-for="BoardProduced.Filter.Line3" name="Line3" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line3))"></select>
+        </div>
+
+        <div class="pp-report__field overall-dashboard-line-field" data-line-index="4">
+            <label asp-for="BoardProduced.Filter.Line4">Line 4</label>
+            <select asp-for="BoardProduced.Filter.Line4" name="Line4" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line4))"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="BoardProduced.Filter.StartDate">Start</label>
+            <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <select asp-for="BoardProduced.Filter.StartTime" name="StartTime" asp-items="CreateHourOptions(Model.BoardProduced.Filter.StartTime)"></select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="BoardProduced.Filter.EndDate">End</label>
+            <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <select asp-for="BoardProduced.Filter.EndTime" name="EndTime" asp-items="CreateHourOptions(Model.BoardProduced.Filter.EndTime)"></select>
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">@Model.ErrorMessage</div>
+    }
+
+    <div class="overall-dashboard__grid">
+        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+            <h2>Board produced</h2>
+            <div class="overall-dashboard__board-grid overall-dashboard__board-grid--@Model.BoardProduced.Filter.Type">
+                @for (var i = 0; i < Model.BoardProduced.Charts.Count; i++)
+                {
+                    <div class="overall-dashboard__chart-box">
+                        <h3>@Model.BoardProduced.Charts[i].LineName</h3>
+                        <div class="overall-dashboard__canvas">
+                            <canvas id="overallBoardProducedChart@(i)"></canvas>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <section class="overall-dashboard__panel">
+            <h2>Error Stop Time</h2>
+            <div class="overall-dashboard__pie">
+                <canvas id="overallErrorStopTimeChart"></canvas>
+            </div>
+        </section>
+
+        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+            <h2>Top worst feeder</h2>
+            <div class="overall-dashboard__table-wrap">
+                <table class="overall-dashboard__table">
+                    <thead>
+                        <tr>
+                            <th>Feeder id</th>
+                            <th>Feeder slot</th>
+                            <th>Part name</th>
+                            <th>Total pickup</th>
+                            <th>Total placement</th>
+                            <th>PPM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.TopWorstFeeders)
+                        {
+                            <tr>
+                                <td>@row.FeederId</td>
+                                <td>@row.FeederSlot</td>
+                                <td>@row.PartName</td>
+                                <td>@row.TotalPickup</td>
+                                <td>@row.TotalPlacement</td>
+                                <td>@row.Ppm.ToString("N2")</td>
+                            </tr>
+                        }
+                        @if (Model.TopWorstFeeders.Count == 0)
+                        {
+                            <tr>
+                                <td class="pp-report__empty" colspan="6">No feeder data found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+            <h2>Top worst nozzle</h2>
+            <div class="overall-dashboard__table-wrap">
+                <table class="overall-dashboard__table">
+                    <thead>
+                        <tr>
+                            <th>Nozzle slot</th>
+                            <th>Head</th>
+                            <th>Part name</th>
+                            <th>Total pickup</th>
+                            <th>Total placement</th>
+                            <th>PPM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Model.TopWorstNozzles)
+                        {
+                            <tr>
+                                <td>@row.NozzleSlot</td>
+                                <td>@row.Head</td>
+                                <td>@row.PartName</td>
+                                <td>@row.TotalPickup</td>
+                                <td>@row.TotalPlacement</td>
+                                <td>@row.Ppm.ToString("N2")</td>
+                            </tr>
+                        }
+                        @if (Model.TopWorstNozzles.Count == 0)
+                        {
+                            <tr>
+                                <td class="pp-report__empty" colspan="6">No nozzle data found.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+</section>
+
+<script>
+    const overallBoardCharts = @Html.Raw(JsonSerializer.Serialize(boardPayload));
+    const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
+    const overallDashboardColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
+
+    document.querySelectorAll('.overall-dashboard-line-field').forEach(field => {
+        const typeSelect = document.getElementById('overallDashboardType');
+        const syncVisibility = () => {
+            const activeCount = Number(typeSelect.value || 1);
+            const lineIndex = Number(field.dataset.lineIndex);
+            field.hidden = lineIndex > activeCount;
+        };
+
+        typeSelect.addEventListener('change', syncVisibility);
+        syncVisibility();
+    });
+
+    overallBoardCharts.forEach((chart, index) => {
+        const canvas = document.getElementById(`overallBoardProducedChart${index}`);
+        if (!canvas) {
+            return;
+        }
+
+        new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels: chart.labels,
+                datasets: chart.series.map((series, seriesIndex) => ({
+                    label: series.laneName,
+                    data: series.values,
+                    backgroundColor: overallDashboardColors[seriesIndex % overallDashboardColors.length],
+                    borderWidth: 0,
+                    stack: 'board-produced'
+                }))
+            },
+            options: {
+                animation: false,
+                maintainAspectRatio: false,
+                normalized: true,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 12 } }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 45, minRotation: 45 },
+                        grid: { display: false }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        grid: { color: '#d8dde2' }
+                    }
+                },
+                datasets: {
+                    bar: { maxBarThickness: 22 }
+                }
+            }
+        });
+    });
+
+    const errorStopCanvas = document.getElementById('overallErrorStopTimeChart');
+    if (errorStopCanvas) {
+        new Chart(errorStopCanvas, {
+            type: 'pie',
+            data: {
+                labels: overallErrorStopChart.labels,
+                datasets: [{
+                    data: overallErrorStopChart.values,
+                    backgroundColor: overallDashboardColors,
+                    borderColor: '#fff',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                animation: false,
+                maintainAspectRatio: false,
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { boxWidth: 10, font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    }
+</script>
+
+@functions {
+    private static SelectList CreateHourOptions(TimeOnly? selectedTime)
+    {
+        var selectedValue = selectedTime.HasValue
+            ? $"{selectedTime.Value.Hour:00}:00"
+            : string.Empty;
+
+        var hours = Enumerable.Range(0, 24)
+            .Select(hour => $"{hour:00}:00")
+            .ToList();
+
+        return new SelectList(hours, selectedValue);
+    }
+}

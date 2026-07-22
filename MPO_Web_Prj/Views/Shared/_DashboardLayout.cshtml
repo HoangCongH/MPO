@@ -15,6 +15,7 @@
         <nav class="app-sidebar__nav">
             <span class="app-sidebar__section">Charts</span>
             <a asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">Dashboard</a>
+            <a asp-controller="OverallDashboard" asp-action="Index" data-nav-controller="OverallDashboard" data-nav-action="Index">Overall Dashboard</a>
             <a asp-controller="BoardCount" asp-action="Index" data-nav-controller="BoardCount" data-nav-action="Index">Board count</a>
 
             <span class="app-sidebar__section">Reports</span>
@@ -23,6 +24,8 @@
             <a asp-controller="PPReport_ByFeeder" asp-action="Index" data-nav-controller="PPReport_ByFeeder" data-nav-action="Index">Pick-Placement by Feeder</a>
             <a asp-controller="PPReport_ByNozzle" asp-action="Index" data-nav-controller="PPReport_ByNozzle" data-nav-action="Index">Pick-Placement by Nozzle</a>
             <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">Cycle Time Report</a>
+            <a asp-controller="DowntimeReport" asp-action="Index" data-nav-controller="DowntimeReport" data-nav-action="Index">Downtime Report</a>
+            <a asp-controller="TotalPickupPlacementReport" asp-action="Index" data-nav-controller="TotalPickupPlacementReport" data-nav-action="Index">Total Pickup Placement Per Line</a>
         </nav>
     </aside>
 

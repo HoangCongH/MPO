@@ -1,0 +1,114 @@
+@model MPO_Web_Prj.Models.Report.DowntimeReportViewModel
+
+@{
+    ViewData["Title"] = "Downtime Report";
+    Layout = "_DashboardLayout";
+}
+
+<section class="pp-report">
+    <h1 class="pp-report__title">DOWNTIME REPORT</h1>
+
+    <form class="pp-report__filter"
+          asp-controller="DowntimeReport"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="Filter.LineName">Line Name</label>
+            <select asp-for="Filter.LineName"
+                    asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.LineName))">
+            </select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.StartDate">Start</label>
+            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.EndDate">End</label>
+            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+
+        <button class="pp-report__button"
+                type="submit"
+                asp-action="ExportExcel">
+            Export Excel
+        </button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="pp-report__table-wrap">
+        <table class="pp-report__table pp-report__table--downtime">
+            <colgroup>
+                <col style="width: 145px;" />
+                <col style="width: 155px;" />
+                <col style="width: 155px;" />
+                <col style="width: 155px;" />
+                <col style="width: 155px;" />
+                <col style="width: 165px;" />
+                <col style="width: 165px;" />
+                <col style="width: 150px;" />
+                <col style="width: 150px;" />
+                <col style="width: 165px;" />
+                <col style="width: 165px;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Line<br />Name</th>
+                    <th>Chip pickup error<br />(count_cperr)</th>
+                    <th>Chip pickup error<br />(time_cperr)</th>
+                    <th>Chip recog error<br />(count_crerr)</th>
+                    <th>Chip recog error<br />(time_crerr)</th>
+                    <th>Single error stop<br />(count_scestop)</th>
+                    <th>Single error stop<br />(time_scestop)</th>
+                    <th>Trouble stop<br />(count_trbl)</th>
+                    <th>Trouble stop<br />(time_trbl)</th>
+                    <th>Part exhaust stop<br />(count_pwait)</th>
+                    <th>Part exhaust stop<br />(time_pwait)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LineName</td>
+                        <td>@row.ChipPickupErrorCount</td>
+                        <td>@row.ChipPickupErrorTime.ToString("N2")</td>
+                        <td>@row.ChipRecogErrorCount</td>
+                        <td>@row.ChipRecogErrorTime.ToString("N2")</td>
+                        <td>@row.SingleErrorStopCount</td>
+                        <td>@row.SingleErrorStopTime.ToString("N2")</td>
+                        <td>@row.TroubleStopCount</td>
+                        <td>@row.TroubleStopTime.ToString("N2")</td>
+                        <td>@row.PartExhaustStopCount</td>
+                        <td>@row.PartExhaustStopTime.ToString("N2")</td>
+                    </tr>
+                }
+
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td class="pp-report__empty" colspan="11">
+                            No downtime data found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pp-report__notes">
+        <p>Filter/Searchable: Line, Time range (Start/End).</p>
+        <p>All counts and times use SUM from production_reports. Default order: Line Name ascending.</p>
+    </div>
+</section>

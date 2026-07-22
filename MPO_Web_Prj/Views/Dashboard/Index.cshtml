@@ -31,5 +31,20 @@
             <span class="dashboard-card__label">Pick-Placement by Nozzle</span>
             <span class="dashboard-card__meta">SUM nozzle counts and misses by nozzle slot</span>
         </a>
+
+        <a class="dashboard-card" asp-controller="CycleTimeReport" asp-action="Index">
+            <span class="dashboard-card__label">Cycle Time Report</span>
+            <span class="dashboard-card__meta">Cycle time by line, model, and group</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="DowntimeReport" asp-action="Index">
+            <span class="dashboard-card__label">Downtime Report</span>
+            <span class="dashboard-card__meta">Downtime count and time by line</span>
+        </a>
+
+        <a class="dashboard-card" asp-controller="TotalPickupPlacementReport" asp-action="Index">
+            <span class="dashboard-card__label">Total Pickup Placement Per Line</span>
+            <span class="dashboard-card__meta">Total pickup, placement, and PPM by line</span>
+        </a>
     </div>
 </section>

@@ -360,6 +360,112 @@ body {
   font-size: 14px;
 }
 
+.overall-dashboard__grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overall-dashboard__panel {
+  border: 1px solid #d8e0e6;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.overall-dashboard__panel--wide {
+  grid-column: 1 / -1;
+}
+
+.overall-dashboard__panel h2 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+
+.overall-dashboard__board-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.overall-dashboard__board-grid--1 {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.overall-dashboard__chart-box {
+  border: 1px solid #e2e8ee;
+  border-radius: 8px;
+  min-width: 0;
+  padding: 10px;
+}
+
+.overall-dashboard__chart-box h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.overall-dashboard__canvas {
+  height: 260px;
+}
+
+.overall-dashboard__pie {
+  height: 340px;
+}
+
+.overall-dashboard__table-wrap {
+  overflow: auto;
+  width: 100%;
+}
+
+.overall-dashboard__table {
+  border-collapse: collapse;
+  min-width: 920px;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.overall-dashboard__table th {
+  background: #1b6b87;
+  border: 2px solid #fff;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.overall-dashboard__table td {
+  background: #c8ced4;
+  border: 2px solid #fff;
+  font-size: 15px;
+  line-height: 1.25;
+  overflow: hidden;
+  padding: 8px;
+  text-overflow: ellipsis;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.overall-dashboard__table td:nth-child(3) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+}
+
+.overall-dashboard__table tbody tr:nth-child(even) td {
+  background: #e4e8ec;
+}
+
+@media (max-width: 1100px) {
+  .overall-dashboard__grid,
+  .overall-dashboard__board-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .pp-report {
   background: #fff;
   border-radius: 8px;
@@ -453,7 +559,15 @@ body {
 }
 
 .pp-report__table--part {
-  min-width: 1495px;
+  min-width: 1745px;
+}
+
+.pp-report__table--downtime {
+  min-width: 1730px;
+}
+
+.pp-report__table--total-pickup-placement {
+  min-width: 880px;
 }
 
 .pp-report__table--wide {

@@ -106,6 +106,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.time_prod).HasPrecision(10, 2);
             entity.Property(e => e.time_pwait).HasPrecision(10, 2);
             entity.Property(e => e.time_rwait).HasPrecision(10, 2);
+            entity.Property(e => e.time_scstop).HasPrecision(10, 2);
             entity.Property(e => e.time_scestop).HasPrecision(10, 2);
             entity.Property(e => e.time_total_stop).HasPrecision(10, 2);
             entity.Property(e => e.time_trbl).HasPrecision(10, 2);

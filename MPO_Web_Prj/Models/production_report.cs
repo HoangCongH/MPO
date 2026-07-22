@@ -49,6 +49,8 @@ public partial class production_report
 
     public decimal? time_crerr { get; set; }
 
+    public decimal? time_scstop { get; set; }
+
     public decimal? time_scestop { get; set; }
 
     public decimal? time_trbl { get; set; }

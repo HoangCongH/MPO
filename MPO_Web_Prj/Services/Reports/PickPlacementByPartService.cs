@@ -23,28 +23,23 @@ public class PickPlacementByPartService : IPickPlacementByPartService
 
         try
         {
-        var lineOptions = new List<ReportSelectOption>
-        {
-            new() { Value = string.Empty, Text = "All" }
-        };
-
-        lineOptions.AddRange(await dbContext.master_machines
-            .AsNoTracking()
-            .Where(machine => machine.line != null && machine.line != string.Empty)
-            .Select(machine => machine.line!)
-            .Distinct()
-            .OrderBy(lineName => lineName)
-            .Select(lineName => new ReportSelectOption
-            {
-                Value = lineName,
-                Text = lineName
-            })
-            .ToListAsync(cancellationToken));
-
-        var partOptions = new List<ReportSelectOption>
-        {
-            new() { Value = string.Empty, Text = "All" }
-        };
+        var lineOptions = await BuildOptionsAsync(
+            dbContext.master_machines
+                .AsNoTracking()
+                .Where(machine => machine.line != null && machine.line != string.Empty)
+                .Select(machine => machine.line!),
+            cancellationToken);
+        var machineOptionQuery = BuildMachineOptionQuery(filter);
+        var machineNameOptions = await BuildOptionsAsync(
+            machineOptionQuery
+                .Where(machine => machine.machine_name != null && machine.machine_name != string.Empty)
+                .Select(machine => machine.machine_name!),
+            cancellationToken);
+        var stageOptions = await BuildOptionsAsync(
+            machineOptionQuery
+                .Where(machine => machine.stage != null)
+                .Select(machine => machine.stage!.Value.ToString()),
+            cancellationToken);
 
         if (!filter.IsApplied)
         {
@@ -52,7 +47,9 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             {
                 Filter = filter,
                 LineOptions = lineOptions,
-                PartOptions = partOptions,
+                MachineNameOptions = machineNameOptions,
+                StageOptions = stageOptions,
+                PartOptions = DefaultOptions(),
                 Rows = []
             };
         }
@@ -66,38 +63,18 @@ public class PickPlacementByPartService : IPickPlacementByPartService
 
         SetDefaultDateRange(filter, latestReportDate);
 
-        var partOptionQuery = dbContext.feeder_logs
-            .AsNoTracking()
-            .Where(log => log.part_name != null && log.part_name != string.Empty);
-
-        if (!string.IsNullOrWhiteSpace(filter.LineName))
-        {
-            partOptionQuery = partOptionQuery.Where(log => log.report != null
-                && log.report.machine != null
-                && log.report.machine.line == filter.LineName);
-        }
-
-        partOptions.AddRange(await partOptionQuery
-            .Select(log => log.part_name!)
-            .Distinct()
-            .OrderBy(partName => partName)
-            .Select(partName => new ReportSelectOption
-            {
-                Value = partName,
-                Text = partName
-            })
-            .ToListAsync(cancellationToken));
+        var partOptions = await BuildOptionsAsync(
+            ApplyMachineFilters(dbContext.feeder_logs.AsNoTracking(), filter)
+                .Where(log => log.part_name != null && log.part_name != string.Empty)
+                .Select(log => log.part_name!),
+            cancellationToken);
 
         var query = dbContext.feeder_logs
             .AsNoTracking()
             .Where(log => log.report != null)
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(filter.LineName))
-        {
-            query = query.Where(log => log.report!.machine != null
-                && log.report.machine.line == filter.LineName);
-        }
+        query = ApplyMachineFilters(query, filter);
 
         if (!string.IsNullOrWhiteSpace(filter.PartName))
         {
@@ -130,11 +107,19 @@ public class PickPlacementByPartService : IPickPlacementByPartService
                 LineName = log.report!.machine != null && log.report.machine.line != null
                     ? log.report.machine.line
                     : string.Empty,
+                MachineName = log.report!.machine != null && log.report.machine.machine_name != null
+                    ? log.report.machine.machine_name
+                    : string.Empty,
+                Stage = log.report!.machine != null && log.report.machine.stage != null
+                    ? log.report.machine.stage.Value.ToString()
+                    : string.Empty,
                 PartName = log.part_name ?? string.Empty
             })
             .Select(group => new
             {
                 group.Key.LineName,
+                group.Key.MachineName,
+                group.Key.Stage,
                 group.Key.PartName,
                 PickupCount = group.Sum(log => log.f_pickup_qty ?? 0),
                 PlacementCount = group.Sum(log => log.f_mount_qty ?? 0),
@@ -147,6 +132,8 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             })
             .OrderByDescending(row => row.PickupCount)
             .ThenBy(row => row.LineName)
+            .ThenBy(row => row.MachineName)
+            .ThenBy(row => row.Stage)
             .ThenBy(row => row.PartName)
             .ToListAsync(cancellationToken);
 
@@ -154,6 +141,8 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             .Select(row => new PickPlacementByPartRow
             {
                 LineName = row.LineName,
+                MachineName = row.MachineName,
+                Stage = row.Stage,
                 PartName = row.PartName,
                 PickupCount = row.PickupCount,
                 PlacementCount = row.PlacementCount,
@@ -171,6 +160,8 @@ public class PickPlacementByPartService : IPickPlacementByPartService
         {
             Filter = filter,
             LineOptions = lineOptions,
+            MachineNameOptions = machineNameOptions,
+            StageOptions = stageOptions,
             PartOptions = partOptions,
             Rows = rows
         };
@@ -187,6 +178,77 @@ public class PickPlacementByPartService : IPickPlacementByPartService
         {
             return CreateDatabaseErrorViewModel(filter, ex);
         }
+    }
+
+    private IQueryable<MPO_Web_Prj.Models.master_machine> BuildMachineOptionQuery(PickPlacementByPartFilter filter)
+    {
+        var query = dbContext.master_machines.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(filter.LineName))
+        {
+            query = query.Where(machine => machine.line == filter.LineName);
+        }
+
+        return query;
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.feeder_log> ApplyMachineFilters(
+        IQueryable<MPO_Web_Prj.Models.feeder_log> query,
+        PickPlacementByPartFilter filter)
+    {
+        if (!string.IsNullOrWhiteSpace(filter.LineName))
+        {
+            query = query.Where(log => log.report != null
+                && log.report.machine != null
+                && log.report.machine.line == filter.LineName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.MachineName))
+        {
+            query = query.Where(log => log.report != null
+                && log.report.machine != null
+                && log.report.machine.machine_name == filter.MachineName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(filter.Stage)
+            && short.TryParse(filter.Stage, out var stage))
+        {
+            query = query.Where(log => log.report != null
+                && log.report.machine != null
+                && log.report.machine.stage == stage);
+        }
+
+        return query;
+    }
+
+    private static async Task<IReadOnlyList<ReportSelectOption>> BuildOptionsAsync(
+        IQueryable<string> values,
+        CancellationToken cancellationToken)
+    {
+        var options = new List<ReportSelectOption>
+        {
+            new() { Value = string.Empty, Text = "All" }
+        };
+
+        options.AddRange(await values
+            .Distinct()
+            .OrderBy(value => value)
+            .Select(value => new ReportSelectOption
+            {
+                Value = value,
+                Text = value
+            })
+            .ToListAsync(cancellationToken));
+
+        return options;
+    }
+
+    private static IReadOnlyList<ReportSelectOption> DefaultOptions()
+    {
+        return new List<ReportSelectOption>
+        {
+            new() { Value = string.Empty, Text = "All" }
+        };
     }
 
     private static PickPlacementByPartViewModel CreateDatabaseErrorViewModel(PickPlacementByPartFilter filter, Exception exception)
@@ -223,13 +285,15 @@ public class PickPlacementByPartService : IPickPlacementByPartService
 
     private static void NormalizeFilter(PickPlacementByPartFilter filter)
     {
-        filter.LineName = string.IsNullOrWhiteSpace(filter.LineName)
-            ? null
-            : filter.LineName.Trim();
+        filter.LineName = Normalize(filter.LineName);
+        filter.MachineName = Normalize(filter.MachineName);
+        filter.Stage = Normalize(filter.Stage);
+        filter.PartName = Normalize(filter.PartName);
+    }
 
-        filter.PartName = string.IsNullOrWhiteSpace(filter.PartName)
-            ? null
-            : filter.PartName.Trim();
+    private static string? Normalize(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static void SetDefaultDateRange(PickPlacementByPartFilter filter, DateTime? latestReportDate)

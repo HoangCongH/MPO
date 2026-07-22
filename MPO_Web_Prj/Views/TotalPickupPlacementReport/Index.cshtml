@@ -1,0 +1,94 @@
+@model MPO_Web_Prj.Models.Report.TotalPickupPlacementReportViewModel
+
+@{
+    ViewData["Title"] = "Total Pickup Placement Per Line";
+    Layout = "_DashboardLayout";
+}
+
+<section class="pp-report">
+    <h1 class="pp-report__title">TOTAL PICKUP PLACEMENT PER LINE</h1>
+
+    <form class="pp-report__filter"
+          asp-controller="TotalPickupPlacementReport"
+          asp-action="Index"
+          method="get">
+        <div class="pp-report__field">
+            <label asp-for="Filter.LineName">Line Name</label>
+            <select asp-for="Filter.LineName"
+                    asp-items="@(new SelectList(Model.LineOptions, "Value", "Text", Model.Filter.LineName))">
+            </select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.StartDate">Start</label>
+            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.EndDate">End</label>
+            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+            <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+        </div>
+
+        <button class="pp-report__button" type="submit">Apply</button>
+
+        <button class="pp-report__button"
+                type="submit"
+                asp-action="ExportExcel">
+            Export Excel
+        </button>
+    </form>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ErrorMessage))
+    {
+        <div class="report-error">
+            @Model.ErrorMessage
+        </div>
+    }
+
+    <div class="pp-report__table-wrap">
+        <table class="pp-report__table pp-report__table--total-pickup-placement">
+            <colgroup>
+                <col style="width: 220px;" />
+                <col style="width: 220px;" />
+                <col style="width: 220px;" />
+                <col style="width: 220px;" />
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>Line</th>
+                    <th>Total pickup</th>
+                    <th>Total placement</th>
+                    <th>PPM</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.Rows)
+                {
+                    <tr>
+                        <td>@row.LineName</td>
+                        <td>@row.TotalPickup</td>
+                        <td>@row.TotalPlacement</td>
+                        <td>@row.Ppm.ToString("N2")</td>
+                    </tr>
+                }
+
+                @if (Model.Rows.Count == 0)
+                {
+                    <tr>
+                        <td class="pp-report__empty" colspan="4">
+                            No total pickup placement data found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pp-report__notes">
+        <p>Filter/Searchable: Line, Time range (Start/End).</p>
+        <p>Total pickup uses SUM(count_pickup), Total placement uses SUM(count_mount) from production_reports.</p>
+        <p>PPM = (Total pickup - Total placement) / Total pickup * 10^6.</p>
+    </div>
+</section>

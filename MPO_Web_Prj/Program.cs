@@ -28,6 +28,9 @@ builder.Services.AddScoped<IPickPlacementByFeederService, PickPlacementByFeederS
 builder.Services.AddScoped<IPickPlacementByNozzleService, PickPlacementByNozzleService>();
 builder.Services.AddScoped<ICycleTimeReportService, CycleTimeReportService>();
 builder.Services.AddScoped<IBoardCountChartService, BoardCountChartService>();
+builder.Services.AddScoped<IDowntimeReportService, DowntimeReportService>();
+builder.Services.AddScoped<ITotalPickupPlacementReportService, TotalPickupPlacementReportService>();
+builder.Services.AddScoped<IOverallDashboardService, OverallDashboardService>();
 
 var app = builder.Build();
 

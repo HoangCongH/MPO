@@ -6,6 +6,10 @@ public class PickPlacementByPartViewModel
 
     public IReadOnlyList<ReportSelectOption> LineOptions { get; set; } = [];
 
+    public IReadOnlyList<ReportSelectOption> MachineNameOptions { get; set; } = [];
+
+    public IReadOnlyList<ReportSelectOption> StageOptions { get; set; } = [];
+
     public IReadOnlyList<ReportSelectOption> PartOptions { get; set; } = [];
 
     public IReadOnlyList<PickPlacementByPartRow> Rows { get; set; } = [];
@@ -18,6 +22,10 @@ public class PickPlacementByPartFilter
     public bool IsApplied { get; set; }
 
     public string? LineName { get; set; }
+
+    public string? MachineName { get; set; }
+
+    public string? Stage { get; set; }
 
     public string? PartName { get; set; }
 
@@ -33,6 +41,10 @@ public class PickPlacementByPartFilter
 public class PickPlacementByPartRow
 {
     public string LineName { get; set; } = string.Empty;
+
+    public string MachineName { get; set; } = string.Empty;
+
+    public string Stage { get; set; } = string.Empty;
 
     public string PartName { get; set; } = string.Empty;
 

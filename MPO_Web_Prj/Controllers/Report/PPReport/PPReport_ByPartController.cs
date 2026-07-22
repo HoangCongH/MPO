@@ -30,12 +30,14 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
             var html = new System.Text.StringBuilder();
             html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");
-            html.AppendLine("<tr><th>Line Name</th><th>Part Name</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
+            html.AppendLine("<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
 
             foreach (var row in viewModel.Rows)
             {
                 html.Append("<tr>");
                 html.Append($"<td>{Encode(row.LineName)}</td>");
+                html.Append($"<td>{Encode(row.MachineName)}</td>");
+                html.Append($"<td>{Encode(row.Stage)}</td>");
                 html.Append($"<td>{Encode(row.PartName)}</td>");
                 html.Append($"<td>{row.PickupCount}</td>");
                 html.Append($"<td>{row.PlacementCount}</td>");

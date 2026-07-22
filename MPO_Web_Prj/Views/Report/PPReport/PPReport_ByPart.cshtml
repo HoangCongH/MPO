@@ -19,6 +19,20 @@
             </select>
         </div>
 
+        <div class="pp-report__field">
+            <label asp-for="Filter.MachineName">Machine Name</label>
+            <select asp-for="Filter.MachineName"
+                    asp-items="@(new SelectList(Model.MachineNameOptions, "Value", "Text", Model.Filter.MachineName))">
+            </select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.Stage">Stage</label>
+            <select asp-for="Filter.Stage"
+                    asp-items="@(new SelectList(Model.StageOptions, "Value", "Text", Model.Filter.Stage))">
+            </select>
+        </div>
+
         <div class="pp-report__field pp-report__field--part">
             <label asp-for="Filter.PartName">Part name</label>
             <select asp-for="Filter.PartName"
@@ -58,6 +72,8 @@
         <table class="pp-report__table pp-report__table--part">
             <colgroup>
                 <col style="width: 145px;" />
+                <col style="width: 160px;" />
+                <col style="width: 90px;" />
                 <col style="width: 150px;" />
                 <col style="width: 135px;" />
                 <col style="width: 145px;" />
@@ -72,6 +88,8 @@
             <thead>
                 <tr>
                     <th>Line<br />Name</th>
+                    <th>Machine<br />Name</th>
+                    <th>Stage</th>
                     <th>Part<br />name</th>
                     <th>Pickup<br />count</th>
                     <th>Placement<br />count</th>
@@ -89,6 +107,8 @@
                 {
                     <tr>
                         <td>@row.LineName</td>
+                        <td>@row.MachineName</td>
+                        <td>@row.Stage</td>
                         <td>@row.PartName</td>
                         <td>@row.PickupCount</td>
                         <td>@row.PlacementCount</td>
@@ -111,7 +131,7 @@
                 @if (Model.Rows.Count == 0)
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="11">No feeder data found.</td>
+                        <td class="pp-report__empty" colspan="13">No feeder data found.</td>
                     </tr>
                 }
             </tbody>
@@ -119,7 +139,7 @@
     </div>
 
     <div class="pp-report__notes">
-        <p>Filter/Searchable: Line, Time range (Start/End), Part name.</p>
+        <p>Filter/Searchable: Line, Machine Name, Stage, Time range (Start/End), Part name.</p>
         <p>All counts and misses use SUM from feeder_logs. Default order: Pickup count descending.</p>
         <p>Scrap ratio = 10^6 * (1 - placement / pickup). If placement is 0 and pickup is greater than 0, the result is 1,000,000.</p>
     </div>
