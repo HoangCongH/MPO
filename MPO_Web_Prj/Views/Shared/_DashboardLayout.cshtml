@@ -13,8 +13,9 @@
         <a class="app-sidebar__brand" asp-controller="Dashboard" asp-action="Index">MES Dashboard</a>
 
         <nav class="app-sidebar__nav">
+            <a class="app-sidebar__home" asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">Home</a>
+
             <span class="app-sidebar__section">Charts</span>
-            <a asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">Dashboard</a>
             <a asp-controller="OverallDashboard" asp-action="Index" data-nav-controller="OverallDashboard" data-nav-action="Index">Overall Dashboard</a>
             <a asp-controller="BoardCount" asp-action="Index" data-nav-controller="BoardCount" data-nav-action="Index">Board count</a>
 

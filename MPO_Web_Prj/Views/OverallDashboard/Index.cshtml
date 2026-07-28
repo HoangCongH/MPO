@@ -23,6 +23,7 @@
     };
 
     var errorStopColors = new[] { "#1b6b87", "#f26f2d", "#7a9a01", "#7b3fb2", "#2e8b57", "#c04c7a" };
+    var errorStopTotal = Model.ErrorStopTime.Sum(slice => slice.Value);
 }
 
 <section class="pp-report overall-dashboard">
@@ -123,10 +124,13 @@
                     {
                         var slice = Model.ErrorStopTime[i];
                         var color = errorStopColors[i % errorStopColors.Length];
+                        var percent = errorStopTotal > 0
+                            ? slice.Value / errorStopTotal * 100
+                            : 0;
                         <li>
                             <span class="overall-dashboard__pie-swatch" style="background-color: @color"></span>
                             <span class="overall-dashboard__pie-label">@slice.Label</span>
-                            <span class="overall-dashboard__pie-value">@slice.Value.ToString("N2")</span>
+                            <span class="overall-dashboard__pie-value">@percent.ToString("N2")%</span>
                         </li>
                     }
                 </ul>
