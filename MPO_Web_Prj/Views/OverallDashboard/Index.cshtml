@@ -21,43 +21,22 @@
         labels = Model.ErrorStopTime.Select(slice => slice.Label),
         values = Model.ErrorStopTime.Select(slice => slice.Value)
     };
+
+    var errorStopColors = new[] { "#1b6b87", "#f26f2d", "#7a9a01", "#7b3fb2", "#2e8b57", "#c04c7a" };
 }
 
 <section class="pp-report overall-dashboard">
-    <h1 class="pp-report__title">OVERALL DASHBOARD</h1>
+    <div class="overall-dashboard__page-heading">
+        <h1 class="pp-report__title">Overall Dashboard (per line)</h1>
+    </div>
 
     <form class="pp-report__filter board-count-filter"
           asp-controller="OverallDashboard"
           asp-action="Index"
           method="get">
-        <div class="pp-report__field">
-            <label asp-for="BoardProduced.Filter.Type">Type</label>
-            <select asp-for="BoardProduced.Filter.Type" name="Type" id="overallDashboardType">
-                <option value="1">1 Line</option>
-                <option value="2">2 Line</option>
-                <option value="3">3 Line</option>
-                <option value="4">4 Line</option>
-            </select>
-        </div>
-
-        <div class="pp-report__field overall-dashboard-line-field" data-line-index="1">
-            <label asp-for="BoardProduced.Filter.Line1">Line 1</label>
+        <div class="pp-report__field overall-dashboard-line-field">
+            <label asp-for="BoardProduced.Filter.Line1">Line</label>
             <select asp-for="BoardProduced.Filter.Line1" name="Line1" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line1))"></select>
-        </div>
-
-        <div class="pp-report__field overall-dashboard-line-field" data-line-index="2">
-            <label asp-for="BoardProduced.Filter.Line2">Line 2</label>
-            <select asp-for="BoardProduced.Filter.Line2" name="Line2" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line2))"></select>
-        </div>
-
-        <div class="pp-report__field overall-dashboard-line-field" data-line-index="3">
-            <label asp-for="BoardProduced.Filter.Line3">Line 3</label>
-            <select asp-for="BoardProduced.Filter.Line3" name="Line3" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line3))"></select>
-        </div>
-
-        <div class="pp-report__field overall-dashboard-line-field" data-line-index="4">
-            <label asp-for="BoardProduced.Filter.Line4">Line 4</label>
-            <select asp-for="BoardProduced.Filter.Line4" name="Line4" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line4))"></select>
         </div>
 
         <div class="pp-report__field">
@@ -81,9 +60,9 @@
     }
 
     <div class="overall-dashboard__grid">
-        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+        <section class="overall-dashboard__panel overall-dashboard__panel--board">
             <h2>Board produced</h2>
-            <div class="overall-dashboard__board-grid overall-dashboard__board-grid--@Model.BoardProduced.Filter.Type">
+            <div class="overall-dashboard__board-grid">
                 @for (var i = 0; i < Model.BoardProduced.Charts.Count; i++)
                 {
                     <div class="overall-dashboard__chart-box">
@@ -96,14 +75,7 @@
             </div>
         </section>
 
-        <section class="overall-dashboard__panel">
-            <h2>Error Stop Time</h2>
-            <div class="overall-dashboard__pie">
-                <canvas id="overallErrorStopTimeChart"></canvas>
-            </div>
-        </section>
-
-        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+        <section class="overall-dashboard__panel overall-dashboard__panel--feeder">
             <h2>Top worst feeder</h2>
             <div class="overall-dashboard__table-wrap">
                 <table class="overall-dashboard__table">
@@ -140,7 +112,28 @@
             </div>
         </section>
 
-        <section class="overall-dashboard__panel overall-dashboard__panel--wide">
+        <section class="overall-dashboard__panel overall-dashboard__panel--error">
+            <h2>Error stop time</h2>
+            <div class="overall-dashboard__pie">
+                <div class="overall-dashboard__pie-chart">
+                    <canvas id="overallErrorStopTimeChart"></canvas>
+                </div>
+                <ul class="overall-dashboard__pie-legend" aria-label="Error stop time legend">
+                    @for (var i = 0; i < Model.ErrorStopTime.Count; i++)
+                    {
+                        var slice = Model.ErrorStopTime[i];
+                        var color = errorStopColors[i % errorStopColors.Length];
+                        <li>
+                            <span class="overall-dashboard__pie-swatch" style="background-color: @color"></span>
+                            <span class="overall-dashboard__pie-label">@slice.Label</span>
+                            <span class="overall-dashboard__pie-value">@slice.Value.ToString("N2")</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </section>
+
+        <section class="overall-dashboard__panel overall-dashboard__panel--nozzle">
             <h2>Top worst nozzle</h2>
             <div class="overall-dashboard__table-wrap">
                 <table class="overall-dashboard__table">
@@ -183,18 +176,6 @@
     const overallBoardCharts = @Html.Raw(JsonSerializer.Serialize(boardPayload));
     const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
     const overallDashboardColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
-
-    document.querySelectorAll('.overall-dashboard-line-field').forEach(field => {
-        const typeSelect = document.getElementById('overallDashboardType');
-        const syncVisibility = () => {
-            const activeCount = Number(typeSelect.value || 1);
-            const lineIndex = Number(field.dataset.lineIndex);
-            field.hidden = lineIndex > activeCount;
-        };
-
-        typeSelect.addEventListener('change', syncVisibility);
-        syncVisibility();
-    });
 
     overallBoardCharts.forEach((chart, index) => {
         const canvas = document.getElementById(`overallBoardProducedChart${index}`);
@@ -263,8 +244,7 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: { boxWidth: 10, font: { size: 12 } }
+                        display: false
                     }
                 }
             }

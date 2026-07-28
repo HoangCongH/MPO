@@ -30,7 +30,23 @@ public class CycleTimeReportController : Controller
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
         var html = new System.Text.StringBuilder();
         html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");
-        html.AppendLine("<tr><th>Line Name</th><th>Model name</th><th>Group name</th><th>Cycle time 1</th><th>Cycle time 2</th><th>Cycle time 3</th></tr>");
+        html.Append("<tr><th>Line Name</th><th>Model name</th><th>Group name</th>");
+        if (viewModel.ShowCycleTime1)
+        {
+            html.Append("<th>Cycle time 1</th>");
+        }
+
+        if (viewModel.ShowCycleTime2)
+        {
+            html.Append("<th>Cycle time 2</th>");
+        }
+
+        if (viewModel.ShowCycleTime3)
+        {
+            html.Append("<th>Cycle time 3</th>");
+        }
+
+        html.AppendLine("</tr>");
 
         foreach (var row in viewModel.Rows)
         {
@@ -38,9 +54,21 @@ public class CycleTimeReportController : Controller
             html.Append($"<td>{Encode(row.LineName)}</td>");
             html.Append($"<td>{Encode(row.ModelName)}</td>");
             html.Append($"<td>{Encode(row.GroupName)}</td>");
-            html.Append($"<td>{row.CycleTime1}</td>");
-            html.Append($"<td>{row.CycleTime2}</td>");
-            html.Append($"<td>{row.CycleTime3}</td>");
+            if (viewModel.ShowCycleTime1)
+            {
+                html.Append($"<td>{FormatCycleTime(row.CycleTime1)}</td>");
+            }
+
+            if (viewModel.ShowCycleTime2)
+            {
+                html.Append($"<td>{FormatCycleTime(row.CycleTime2)}</td>");
+            }
+
+            if (viewModel.ShowCycleTime3)
+            {
+                html.Append($"<td>{FormatCycleTime(row.CycleTime3)}</td>");
+            }
+
             html.AppendLine("</tr>");
         }
 
@@ -55,5 +83,12 @@ public class CycleTimeReportController : Controller
     private static string Encode(string value)
     {
         return System.Net.WebUtility.HtmlEncode(value);
+    }
+
+    private static string FormatCycleTime(decimal? value)
+    {
+        return value.HasValue
+            ? value.Value.ToString("N2")
+            : string.Empty;
     }
 }

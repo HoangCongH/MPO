@@ -11,6 +11,12 @@ public class CycleTimeReportViewModel
     public IReadOnlyList<CycleTimeReportRow> Rows { get; set; } = [];
 
     public string? ErrorMessage { get; set; }
+
+    public bool ShowCycleTime1 => Rows.Any(row => row.CycleTime1.HasValue);
+
+    public bool ShowCycleTime2 => Rows.Any(row => row.CycleTime2.HasValue);
+
+    public bool ShowCycleTime3 => Rows.Any(row => row.CycleTime3.HasValue);
 }
 
 public class CycleTimeReportFilter
@@ -38,9 +44,9 @@ public class CycleTimeReportRow
 
     public string GroupName { get; set; } = string.Empty;
 
-    public decimal CycleTime1 { get; set; }
+    public decimal? CycleTime1 { get; set; }
 
-    public decimal CycleTime2 { get; set; }
+    public decimal? CycleTime2 { get; set; }
 
-    public decimal CycleTime3 { get; set; }
+    public decimal? CycleTime3 { get; set; }
 }

@@ -9,7 +9,7 @@ public class OverallDashboardService : IOverallDashboardService
 {
     private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
     private static readonly TimeOnly EndOfDay = new(23, 0);
-    private const int TopWorstLimit = 10;
+    private const int TopWorstLimit = 6;
 
     private readonly AppDbContext dbContext;
     private readonly IBoardCountChartService boardCountChartService;

@@ -135,21 +135,50 @@ public class CycleTimeReportService : ICycleTimeReportService
                 }
             }
 
-            var rows = await query
-                .OrderBy(report => report.report_date)
-                .ThenBy(report => report.machine_id)
-                .Select(report => new CycleTimeReportRow
+            var groupedRows = await query
+                .GroupBy(report => new
                 {
                     LineName = report.machine != null && report.machine.line != null
                         ? report.machine.line
                         : string.Empty,
                     ModelName = report.lot_name ?? string.Empty,
-                    GroupName = report.mjs_id ?? string.Empty,
-                    CycleTime1 = report.cycle_time_1 ?? 0,
-                    CycleTime2 = report.cycle_time_2 ?? 0,
-                    CycleTime3 = report.cycle_time_3 ?? 0
+                    GroupName = report.mjs_id ?? string.Empty
                 })
+                .Select(group => new
+                {
+                    group.Key.LineName,
+                    group.Key.ModelName,
+                    group.Key.GroupName,
+                    CycleTime1Total = group
+                        .Where(report => report.cycle_time_1.HasValue && report.cycle_time_1.Value != 0)
+                        .Sum(report => report.cycle_time_1 ?? 0),
+                    CycleTime1Count = group.Count(report => report.cycle_time_1.HasValue && report.cycle_time_1.Value != 0),
+                    CycleTime2Total = group
+                        .Where(report => report.cycle_time_2.HasValue && report.cycle_time_2.Value != 0)
+                        .Sum(report => report.cycle_time_2 ?? 0),
+                    CycleTime2Count = group.Count(report => report.cycle_time_2.HasValue && report.cycle_time_2.Value != 0),
+                    CycleTime3Total = group
+                        .Where(report => report.cycle_time_3.HasValue && report.cycle_time_3.Value != 0)
+                        .Sum(report => report.cycle_time_3 ?? 0),
+                    CycleTime3Count = group.Count(report => report.cycle_time_3.HasValue && report.cycle_time_3.Value != 0)
+                })
+                .OrderBy(row => row.LineName)
+                .ThenBy(row => row.ModelName)
+                .ThenBy(row => row.GroupName)
                 .ToListAsync(cancellationToken);
+
+            var rows = groupedRows
+                .Select(row => new CycleTimeReportRow
+                {
+                    LineName = row.LineName,
+                    ModelName = row.ModelName,
+                    GroupName = row.GroupName,
+                    CycleTime1 = CalculateAverage(row.CycleTime1Total, row.CycleTime1Count),
+                    CycleTime2 = CalculateAverage(row.CycleTime2Total, row.CycleTime2Count),
+                    CycleTime3 = CalculateAverage(row.CycleTime3Total, row.CycleTime3Count)
+                })
+                .Where(row => row.CycleTime1.HasValue || row.CycleTime2.HasValue || row.CycleTime3.HasValue)
+                .ToList();
 
             return new CycleTimeReportViewModel
             {
@@ -266,6 +295,13 @@ public class CycleTimeReportService : ICycleTimeReportService
         }
 
         return false;
+    }
+
+    private static decimal? CalculateAverage(decimal total, int count)
+    {
+        return count > 0
+            ? Math.Round(total / count, 2)
+            : null;
     }
 
     private static void NormalizeFilter(CycleTimeReportFilter filter)

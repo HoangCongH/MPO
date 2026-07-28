@@ -123,6 +123,70 @@
                 });
             });
         })();
+
+        (() => {
+            const storagePrefix = `mpo-table-columns:${window.location.pathname.toLowerCase()}`;
+
+            document.querySelectorAll('table').forEach((table, tableIndex) => {
+                if (!table.tHead || table.dataset.columnResizeInitialized === 'true') {
+                    return;
+                }
+
+                table.dataset.columnResizeInitialized = 'true';
+                const headers = Array.from(table.tHead.rows[0].cells);
+                const key = `${storagePrefix}:${table.className || 'table'}:${tableIndex}`;
+                let colGroup = table.querySelector(':scope > colgroup');
+
+                if (!colGroup) {
+                    colGroup = document.createElement('colgroup');
+                    table.insertBefore(colGroup, table.tHead);
+                }
+
+                while (colGroup.children.length < headers.length) {
+                    colGroup.appendChild(document.createElement('col'));
+                }
+
+                const savedWidths = JSON.parse(localStorage.getItem(key) || '[]');
+                headers.forEach((header, columnIndex) => {
+                    const col = colGroup.children[columnIndex];
+                    const initialWidth = savedWidths[columnIndex] || Math.round(header.getBoundingClientRect().width);
+                    if (initialWidth > 0) {
+                        col.style.width = `${initialWidth}px`;
+                    }
+
+                    const resizer = document.createElement('span');
+                    resizer.className = 'table-column-resizer';
+                    resizer.setAttribute('aria-label', `Resize ${header.textContent.trim()} column`);
+                    header.appendChild(resizer);
+
+                    resizer.addEventListener('pointerdown', event => {
+                        event.preventDefault();
+                        resizer.setPointerCapture(event.pointerId);
+                        resizer.classList.add('is-resizing');
+                        const startX = event.clientX;
+                        const startWidth = header.getBoundingClientRect().width;
+
+                        const resize = moveEvent => {
+                            const width = Math.max(60, Math.round(startWidth + moveEvent.clientX - startX));
+                            col.style.width = `${width}px`;
+                        };
+
+                        const finish = () => {
+                            resizer.classList.remove('is-resizing');
+                            const widths = Array.from(colGroup.children).map(item => Math.round(item.getBoundingClientRect().width));
+                            localStorage.setItem(key, JSON.stringify(widths));
+                            resizer.removeEventListener('pointermove', resize);
+                            resizer.removeEventListener('pointerup', finish);
+                            resizer.removeEventListener('pointercancel', finish);
+                        };
+
+                        resizer.addEventListener('pointermove', resize);
+                        resizer.addEventListener('pointerup', finish);
+                        resizer.addEventListener('pointercancel', finish);
+                    });
+                });
+            });
+        })();
     </script>
 </body>
 </html>

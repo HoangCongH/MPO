@@ -3,6 +3,12 @@
 @{
     ViewData["Title"] = "Cycle Time Report";
     Layout = "_DashboardLayout";
+
+    var visibleCycleColumnCount = 0;
+    if (Model.ShowCycleTime1) visibleCycleColumnCount++;
+    if (Model.ShowCycleTime2) visibleCycleColumnCount++;
+    if (Model.ShowCycleTime3) visibleCycleColumnCount++;
+    var emptyColumnCount = 3 + visibleCycleColumnCount;
 }
 
 <section class="pp-report">
@@ -62,18 +68,36 @@
                 <col style="width: 170px;" />
                 <col style="width: 240px;" />
                 <col style="width: 310px;" />
-                <col style="width: 150px;" />
-                <col style="width: 150px;" />
-                <col style="width: 150px;" />
+                @if (Model.ShowCycleTime1)
+                {
+                    <col style="width: 150px;" />
+                }
+                @if (Model.ShowCycleTime2)
+                {
+                    <col style="width: 150px;" />
+                }
+                @if (Model.ShowCycleTime3)
+                {
+                    <col style="width: 150px;" />
+                }
             </colgroup>
             <thead>
                 <tr>
                     <th>Line Name</th>
                     <th>Model name</th>
                     <th>Group name</th>
-                    <th>Cycle<br />time 1</th>
-                    <th>Cycle<br />time 2</th>
-                    <th>Cycle<br />time 3</th>
+                    @if (Model.ShowCycleTime1)
+                    {
+                        <th>Cycle<br />time 1</th>
+                    }
+                    @if (Model.ShowCycleTime2)
+                    {
+                        <th>Cycle<br />time 2</th>
+                    }
+                    @if (Model.ShowCycleTime3)
+                    {
+                        <th>Cycle<br />time 3</th>
+                    }
                 </tr>
             </thead>
             <tbody>
@@ -83,33 +107,39 @@
                         <td>@row.LineName</td>
                         <td>@row.ModelName</td>
                         <td>@row.GroupName</td>
-                        <td>@row.CycleTime1</td>
-                        <td>@row.CycleTime2</td>
-                        <td>@row.CycleTime3</td>
+                        @if (Model.ShowCycleTime1)
+                        {
+                            <td>@FormatCycleTime(row.CycleTime1)</td>
+                        }
+                        @if (Model.ShowCycleTime2)
+                        {
+                            <td>@FormatCycleTime(row.CycleTime2)</td>
+                        }
+                        @if (Model.ShowCycleTime3)
+                        {
+                            <td>@FormatCycleTime(row.CycleTime3)</td>
+                        }
                     </tr>
                 }
 
                 @if (Model.Rows.Count == 0)
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="6">
+                        <td class="pp-report__empty" colspan="@emptyColumnCount">
                             No cycle time data found.
                         </td>
-                    </tr>
-                }
-
-                @for (var i = Model.Rows.Count; i < 8; i++)
-                {
-                    <tr>
-                        <td>&nbsp;</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
                     </tr>
                 }
             </tbody>
         </table>
     </div>
 </section>
+
+@functions {
+    private static string FormatCycleTime(decimal? value)
+    {
+        return value.HasValue
+            ? value.Value.ToString("N2")
+            : string.Empty;
+    }
+}
