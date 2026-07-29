@@ -42,14 +42,38 @@
 
         <div class="pp-report__field">
             <label asp-for="BoardProduced.Filter.StartDate">Start</label>
-            <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
-            <select asp-for="BoardProduced.Filter.StartTime" name="StartTime" asp-items="CreateHourOptions(Model.BoardProduced.Filter.StartTime)"></select>
+            <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
+            <select id="StartTime" name="StartTime" required>
+                @foreach (var option in CreateHourOptions(Model.BoardProduced.Filter.StartTime))
+                {
+                    if (option.Selected)
+                    {
+                        <option value="@option.Value" selected>@option.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
         </div>
 
         <div class="pp-report__field">
             <label asp-for="BoardProduced.Filter.EndDate">End</label>
-            <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
-            <select asp-for="BoardProduced.Filter.EndTime" name="EndTime" asp-items="CreateHourOptions(Model.BoardProduced.Filter.EndTime)"></select>
+            <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
+            <select id="EndTime" name="EndTime" required>
+                @foreach (var option in CreateHourOptions(Model.BoardProduced.Filter.EndTime))
+                {
+                    if (option.Selected)
+                    {
+                        <option value="@option.Value" selected>@option.Text</option>
+                    }
+                    else
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                }
+            </select>
         </div>
 
         <button class="pp-report__button" type="submit">Apply</button>
@@ -257,16 +281,29 @@
 </script>
 
 @functions {
-    private static SelectList CreateHourOptions(TimeOnly? selectedTime)
+    private static IReadOnlyList<SelectListItem> CreateHourOptions(TimeOnly? selectedTime)
     {
         var selectedValue = selectedTime.HasValue
             ? $"{selectedTime.Value.Hour:00}:00"
             : string.Empty;
 
-        var hours = Enumerable.Range(0, 24)
-            .Select(hour => $"{hour:00}:00")
-            .ToList();
+        var options = new List<SelectListItem>
+        {
+            new() { Value = string.Empty, Text = string.Empty, Selected = string.IsNullOrEmpty(selectedValue) }
+        };
 
-        return new SelectList(hours, selectedValue);
+        options.AddRange(Enumerable.Range(0, 24)
+            .Select(hour =>
+            {
+                var value = $"{hour:00}:00";
+                return new SelectListItem
+                {
+                    Value = value,
+                    Text = value,
+                    Selected = value == selectedValue
+                };
+            }));
+
+        return options;
     }
 }

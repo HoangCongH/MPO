@@ -22,8 +22,16 @@ public class OverallDashboardService : IOverallDashboardService
 
     public async Task<OverallDashboardViewModel> GetDashboardAsync(BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
-        filter.IsApplied = true;
         var boardProduced = await boardCountChartService.GetChartAsync(filter, cancellationToken);
+
+        if (!boardProduced.Filter.IsApplied)
+        {
+            return new OverallDashboardViewModel
+            {
+                BoardProduced = boardProduced,
+                ErrorMessage = boardProduced.ErrorMessage
+            };
+        }
 
         try
         {
