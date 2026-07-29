@@ -18,8 +18,14 @@ public class BoardCountController : Controller
     [HttpGet("Index")]
     public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
-        filter.IsApplied = Request.Query.Count > 0;
+        var hasSubmittedFilter = Request.Query.Count > 0;
+        filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
         var viewModel = await boardCountChartService.GetChartAsync(filter, cancellationToken);
+        if (hasSubmittedFilter && !filter.IsApplied)
+        {
+            viewModel.ErrorMessage = ReportFilterGuard.RequiredDateTimeMessage;
+        }
+
         return View(viewModel);
     }
 }

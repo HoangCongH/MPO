@@ -106,8 +106,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
             if (!string.IsNullOrWhiteSpace(filter.FeederSlot))
             {
-                var feederSlot = ParseFeederSlot(filter.FeederSlot);
-                query = query.Where(log => log.f_add == feederSlot.FAdd && log.fs_add == feederSlot.FsAdd);
+                query = query.Where(log => log.f_add == filter.FeederSlot);
             }
 
             query = ApplyDateFilter(query, filter);
@@ -158,7 +157,9 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     MachineName = row.MachineName,
                     Stage = row.Stage,
                     FeederId = row.FeederId,
-                    FeederSlot = FormatFeederSlot(row.FeederAdd, row.FeederSubAdd),
+                    FeederTable = GetFeederTable(row.FeederAdd),
+                    FeederSlot = GetFeederSlot(row.FeederAdd),
+                    Side = row.FeederSubAdd?.ToString() ?? string.Empty,
                     PickupCount = row.PickupCount,
                     PlacementCount = row.PlacementCount,
                     PickupMiss = row.PickupMiss,
@@ -293,14 +294,9 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         CancellationToken cancellationToken)
     {
         var slots = await query
-            .Select(log => new
-            {
-                FeederAdd = log.f_add ?? string.Empty,
-                FeederSubAdd = log.fs_add
-            })
+            .Select(log => log.f_add ?? string.Empty)
             .Distinct()
-            .OrderBy(slot => slot.FeederAdd)
-            .ThenBy(slot => slot.FeederSubAdd)
+            .OrderBy(slot => slot)
             .ToListAsync(cancellationToken);
 
         var options = new List<ReportSelectOption>
@@ -309,8 +305,6 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         };
 
         options.AddRange(slots
-            .Select(slot => FormatFeederSlot(slot.FeederAdd, slot.FeederSubAdd))
-            .Distinct()
             .Select(slot => new ReportSelectOption
             {
                 Value = slot,
@@ -320,25 +314,18 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         return options;
     }
 
-    private static (string FAdd, short? FsAdd) ParseFeederSlot(string feederSlot)
+    private static string GetFeederTable(string feederAdd)
     {
-        var separatorIndex = feederSlot.LastIndexOf('_');
-        if (separatorIndex <= 0)
-        {
-            return (feederSlot, null);
-        }
-
-        var fAdd = feederSlot[..separatorIndex];
-        var fsAddText = feederSlot[(separatorIndex + 1)..];
-
-        return short.TryParse(fsAddText, out var fsAdd)
-            ? (fAdd, fsAdd)
-            : (feederSlot, null);
+        return string.IsNullOrWhiteSpace(feederAdd)
+            ? string.Empty
+            : feederAdd[..1];
     }
 
-    private static string FormatFeederSlot(string feederAdd, short? feederSubAdd)
+    private static string GetFeederSlot(string feederAdd)
     {
-        return $"{feederAdd}_{feederSubAdd?.ToString() ?? string.Empty}";
+        return string.IsNullOrWhiteSpace(feederAdd) || feederAdd.Length <= 1
+            ? string.Empty
+            : feederAdd[1..];
     }
 
     private static decimal CalculateScrapRatio(int pickupCount, int placementCount)

@@ -18,15 +18,21 @@ public class TotalPickupPlacementReportController : Controller
     [HttpGet("Index")]
     public async Task<IActionResult> Index([FromQuery] TotalPickupPlacementReportFilter filter, CancellationToken cancellationToken)
     {
-        filter.IsApplied = Request.Query.Count > 0;
+        var hasSubmittedFilter = Request.Query.Count > 0;
+        filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
+        if (hasSubmittedFilter && !filter.IsApplied)
+        {
+            viewModel.ErrorMessage = ReportFilterGuard.RequiredDateTimeMessage;
+        }
+
         return View(viewModel);
     }
 
     [HttpGet("ExportExcel")]
     public async Task<IActionResult> ExportExcel([FromQuery] TotalPickupPlacementReportFilter filter, CancellationToken cancellationToken)
     {
-        filter.IsApplied = true;
+        filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
         var html = new System.Text.StringBuilder();
         html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");

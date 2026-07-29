@@ -48,6 +48,7 @@ public class CycleTimeReportService : ICycleTimeReportService
                     Filter = filter,
                     LineOptions = lineOptions,
                     ModelOptions = BuildOptions([]),
+                    HasAppliedFilter = false,
                     Rows = []
                 };
             }
@@ -185,6 +186,7 @@ public class CycleTimeReportService : ICycleTimeReportService
                 Filter = filter,
                 LineOptions = lineOptions,
                 ModelOptions = modelOptions,
+                HasAppliedFilter = true,
                 Rows = rows
             };
         }
@@ -207,6 +209,7 @@ public class CycleTimeReportService : ICycleTimeReportService
         return new CycleTimeReportViewModel
         {
             Filter = filter,
+            HasAppliedFilter = filter.IsApplied,
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

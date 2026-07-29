@@ -74,7 +74,9 @@
                 <col style="width: 90px;" />
                 <col style="width: 150px;" />
                 <col style="width: 125px;" />
+                <col style="width: 80px;" />
                 <col style="width: 125px;" />
+                <col style="width: 80px;" />
                 <col style="width: 120px;" />
                 <col style="width: 140px;" />
                 <col style="width: 120px;" />
@@ -92,7 +94,9 @@
                     <th>Stage</th>
                     <th>Part<br />Name</th>
                     <th>Feeder<br />ID</th>
+                    <th>Table</th>
                     <th>Feeder<br />slot</th>
+                    <th>Side</th>
                     <th>Pickup<br />count</th>
                     <th>Placement<br />count</th>
                     <th>Pickup<br />miss</th>
@@ -113,7 +117,9 @@
                         <td>@row.Stage</td>
                         <td>@row.PartName</td>
                         <td>@row.FeederId</td>
+                        <td>@row.FeederTable</td>
                         <td>@row.FeederSlot</td>
+                        <td>@row.Side</td>
                         <td>@row.PickupCount</td>
                         <td>@row.PlacementCount</td>
                         <td>@row.PickupMiss</td>
@@ -135,7 +141,7 @@
                 @if (Model.Rows.Count == 0)
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="15">No feeder data found.</td>
+                        <td class="pp-report__empty" colspan="17">No feeder data found.</td>
                     </tr>
                 }
             </tbody>

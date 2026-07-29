@@ -16,15 +16,21 @@ namespace MPO_Web_Prj.Controllers.Report
         [HttpGet("Index")]
         public async Task<IActionResult> Index([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
-            filter.IsApplied = Request.Query.Count > 0;
+            var hasSubmittedFilter = Request.Query.Count > 0;
+            filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
+            if (hasSubmittedFilter && !filter.IsApplied)
+            {
+                viewModel.ErrorMessage = MPO_Web_Prj.Services.Reports.ReportFilterGuard.RequiredDateTimeMessage;
+            }
+
             return View(viewModel);
         }
 
         [HttpGet("ExportExcel")]
         public async Task<IActionResult> ExportExcel([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
-            filter.IsApplied = true;
+            filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
             var html = new System.Text.StringBuilder();
             html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");

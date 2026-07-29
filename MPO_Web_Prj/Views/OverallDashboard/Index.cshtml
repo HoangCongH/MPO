@@ -34,6 +34,7 @@
     <form class="pp-report__filter board-count-filter"
           asp-controller="OverallDashboard"
           asp-action="Index"
+          data-skip-filter-restore="true"
           method="get">
         <div class="pp-report__field overall-dashboard-line-field">
             <label asp-for="BoardProduced.Filter.Line1">Line</label>
@@ -103,11 +104,13 @@
         <section class="overall-dashboard__panel overall-dashboard__panel--feeder">
             <h2>Top worst feeder</h2>
             <div class="overall-dashboard__table-wrap">
-                <table class="overall-dashboard__table">
+                <table class="overall-dashboard__table overall-dashboard__table--feeder">
                     <thead>
                         <tr>
                             <th>Feeder id</th>
+                            <th>Table</th>
                             <th>Feeder slot</th>
+                            <th>Side</th>
                             <th>Part name</th>
                             <th>Total pickup</th>
                             <th>Total placement</th>
@@ -119,7 +122,9 @@
                         {
                             <tr>
                                 <td>@row.FeederId</td>
+                                <td>@row.FeederTable</td>
                                 <td>@row.FeederSlot</td>
+                                <td>@row.Side</td>
                                 <td>@row.PartName</td>
                                 <td>@row.TotalPickup</td>
                                 <td>@row.TotalPlacement</td>
@@ -129,7 +134,7 @@
                         @if (Model.TopWorstFeeders.Count == 0)
                         {
                             <tr>
-                                <td class="pp-report__empty" colspan="6">No feeder data found.</td>
+                                <td class="pp-report__empty" colspan="8">No feeder data found.</td>
                             </tr>
                         }
                     </tbody>

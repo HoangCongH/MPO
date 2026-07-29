@@ -18,19 +18,25 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
         [HttpGet("Index")]
         public async Task<IActionResult> Index([FromQuery] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
         {
-            filter.IsApplied = Request.Query.Count > 0;
+            var hasSubmittedFilter = Request.Query.Count > 0;
+            filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
+            if (hasSubmittedFilter && !filter.IsApplied)
+            {
+                viewModel.ErrorMessage = ReportFilterGuard.RequiredDateTimeMessage;
+            }
+
             return View("~/Views/Report/PPReport/PPReport_ByFeeder.cshtml", viewModel);
         }
 
         [HttpGet("ExportExcel")]
         public async Task<IActionResult> ExportExcel([FromQuery] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
         {
-            filter.IsApplied = true;
+            filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
             var html = new System.Text.StringBuilder();
             html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");
-            html.AppendLine("<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Feeder ID</th><th>Feeder slot</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
+            html.AppendLine("<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Feeder ID</th><th>Table</th><th>Feeder slot</th><th>Side</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
 
             foreach (var row in viewModel.Rows)
             {
@@ -40,7 +46,9 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
                 html.Append($"<td>{Encode(row.Stage)}</td>");
                 html.Append($"<td>{Encode(row.PartName)}</td>");
                 html.Append($"<td>{Encode(row.FeederId)}</td>");
+                html.Append($"<td>{Encode(row.FeederTable)}</td>");
                 html.Append($"<td>{Encode(row.FeederSlot)}</td>");
+                html.Append($"<td>{Encode(row.Side)}</td>");
                 html.Append($"<td>{row.PickupCount}</td>");
                 html.Append($"<td>{row.PlacementCount}</td>");
                 html.Append($"<td>{row.PickupMiss}</td>");

@@ -70,8 +70,17 @@
             document.querySelectorAll('form.pp-report__filter').forEach(form => {
                 const storageKey = `mpo-filter:${window.location.pathname.toLowerCase()}`;
                 const hasQuery = window.location.search.length > 1;
+                const requiredDateTimeFields = ['StartDate', 'StartTime', 'EndDate', 'EndTime'];
 
-                if (!hasQuery) {
+                requiredDateTimeFields.forEach(fieldName => {
+                    const field = form.elements.namedItem(fieldName)
+                        || form.elements.namedItem(`Filter.${fieldName}`);
+                    if (field) {
+                        field.required = true;
+                    }
+                });
+
+                if (!hasQuery && form.dataset.skipFilterRestore !== 'true') {
                     const storedQuery = sessionStorage.getItem(storageKey);
                     if (storedQuery) {
                         const values = new URLSearchParams(storedQuery);

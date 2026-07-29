@@ -19,14 +19,11 @@ public class OverallDashboardController : Controller
     public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
         var hasSubmittedFilter = Request.Query.Count > 0;
-        var hasRequiredDateTime = filter.StartDate.HasValue
-            && filter.StartTime.HasValue
-            && filter.EndDate.HasValue
-            && filter.EndTime.HasValue;
+        var hasRequiredDateTime = ReportFilterGuard.HasRequiredDateTime(filter);
 
         // Overall Dashboard is a single-line view. Keep the Board Count Type
         // selector scoped to the Board Count page.
-        filter.IsApplied = !hasSubmittedFilter || hasRequiredDateTime;
+        filter.IsApplied = hasSubmittedFilter && hasRequiredDateTime;
         filter.Type = 1;
         filter.Line2 = null;
         filter.Line3 = null;
@@ -36,7 +33,7 @@ public class OverallDashboardController : Controller
 
         if (hasSubmittedFilter && !hasRequiredDateTime)
         {
-            viewModel.ErrorMessage = "Please enter Start date, Start time, End date, and End time before applying the filter.";
+            viewModel.ErrorMessage = ReportFilterGuard.RequiredDateTimeMessage;
         }
 
         return View(viewModel);

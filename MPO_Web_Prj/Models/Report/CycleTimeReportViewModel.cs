@@ -12,11 +12,13 @@ public class CycleTimeReportViewModel
 
     public string? ErrorMessage { get; set; }
 
-    public bool ShowCycleTime1 => Rows.Any(row => row.CycleTime1.HasValue);
+    public bool HasAppliedFilter { get; set; }
 
-    public bool ShowCycleTime2 => Rows.Any(row => row.CycleTime2.HasValue);
+    public bool ShowCycleTime1 => !HasAppliedFilter || Rows.Any(row => row.CycleTime1.HasValue);
 
-    public bool ShowCycleTime3 => Rows.Any(row => row.CycleTime3.HasValue);
+    public bool ShowCycleTime2 => !HasAppliedFilter || Rows.Any(row => row.CycleTime2.HasValue);
+
+    public bool ShowCycleTime3 => !HasAppliedFilter || Rows.Any(row => row.CycleTime3.HasValue);
 }
 
 public class CycleTimeReportFilter

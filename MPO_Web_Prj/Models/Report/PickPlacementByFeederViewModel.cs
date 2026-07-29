@@ -58,7 +58,11 @@ public class PickPlacementByFeederRow
 
     public string FeederId { get; set; } = string.Empty;
 
+    public string FeederTable { get; set; } = string.Empty;
+
     public string FeederSlot { get; set; } = string.Empty;
+
+    public string Side { get; set; } = string.Empty;
 
     public int PickupCount { get; set; }
 

@@ -167,7 +167,9 @@ public class OverallDashboardService : IOverallDashboardService
             .Select(row => new OverallWorstFeederRow
             {
                 FeederId = row.FeederId,
-                FeederSlot = FormatSlot(row.FeederAdd, row.FeederSubAdd),
+                FeederTable = GetFeederTable(row.FeederAdd),
+                FeederSlot = GetFeederSlot(row.FeederAdd),
+                Side = row.FeederSubAdd?.ToString() ?? string.Empty,
                 PartName = row.PartName,
                 TotalPickup = row.TotalPickup,
                 TotalPlacement = row.TotalPlacement,
@@ -297,6 +299,20 @@ public class OverallDashboardService : IOverallDashboardService
         return string.IsNullOrWhiteSpace(slot) && !subSlot.HasValue
             ? string.Empty
             : $"{slot}_{subSlot?.ToString() ?? string.Empty}";
+    }
+
+    private static string GetFeederTable(string feederAdd)
+    {
+        return string.IsNullOrWhiteSpace(feederAdd)
+            ? string.Empty
+            : feederAdd[..1];
+    }
+
+    private static string GetFeederSlot(string feederAdd)
+    {
+        return string.IsNullOrWhiteSpace(feederAdd) || feederAdd.Length <= 1
+            ? string.Empty
+            : feederAdd[1..];
     }
 
     private static decimal CalculatePpm(long totalPickup, long totalPlacement)
