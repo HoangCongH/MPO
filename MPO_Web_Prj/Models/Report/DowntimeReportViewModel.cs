@@ -8,6 +8,8 @@ public class DowntimeReportViewModel
 
     public IReadOnlyList<DowntimeReportRow> Rows { get; set; } = [];
 
+    public ReportPagination Pagination { get; set; } = new();
+
     public string? ErrorMessage { get; set; }
 }
 
@@ -24,6 +26,8 @@ public class DowntimeReportFilter
     public DateOnly? EndDate { get; set; }
 
     public TimeOnly? EndTime { get; set; }
+
+    public int Page { get; set; } = 1;
 }
 
 public class DowntimeReportRow
@@ -49,4 +53,6 @@ public class DowntimeReportRow
     public long PartExhaustStopCount { get; set; }
 
     public decimal PartExhaustStopTime { get; set; }
+
+    public DateTime? LatestReportDate { get; set; }
 }

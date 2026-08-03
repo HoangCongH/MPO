@@ -49,6 +49,7 @@ public class CycleTimeReportService : ICycleTimeReportService
                     LineOptions = lineOptions,
                     ModelOptions = BuildOptions([]),
                     HasAppliedFilter = false,
+                    Pagination = ReportPaging.Create(filter.Page, 0),
                     Rows = []
                 };
             }
@@ -161,14 +162,16 @@ public class CycleTimeReportService : ICycleTimeReportService
                     CycleTime3Total = group
                         .Where(report => report.cycle_time_3.HasValue && report.cycle_time_3.Value != 0)
                         .Sum(report => report.cycle_time_3 ?? 0),
-                    CycleTime3Count = group.Count(report => report.cycle_time_3.HasValue && report.cycle_time_3.Value != 0)
+                    CycleTime3Count = group.Count(report => report.cycle_time_3.HasValue && report.cycle_time_3.Value != 0),
+                    LatestReportDate = group.Max(report => report.report_date)
                 })
-                .OrderBy(row => row.LineName)
+                .OrderByDescending(row => row.LatestReportDate)
+                .ThenBy(row => row.LineName)
                 .ThenBy(row => row.ModelName)
                 .ThenBy(row => row.GroupName)
                 .ToListAsync(cancellationToken);
 
-            var rows = groupedRows
+            var allRows = groupedRows
                 .Select(row => new CycleTimeReportRow
                 {
                     LineName = row.LineName,
@@ -181,12 +184,20 @@ public class CycleTimeReportService : ICycleTimeReportService
                 .Where(row => row.CycleTime1.HasValue || row.CycleTime2.HasValue || row.CycleTime3.HasValue)
                 .ToList();
 
+            var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+            filter.Page = pagination.Page;
+            var rows = allRows
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
+                .ToList();
+
             return new CycleTimeReportViewModel
             {
                 Filter = filter,
                 LineOptions = lineOptions,
                 ModelOptions = modelOptions,
                 HasAppliedFilter = true,
+                Pagination = pagination,
                 Rows = rows
             };
         }
@@ -210,6 +221,7 @@ public class CycleTimeReportService : ICycleTimeReportService
         {
             Filter = filter,
             HasAppliedFilter = filter.IsApplied,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

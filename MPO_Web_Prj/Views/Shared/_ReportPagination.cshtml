@@ -1,0 +1,10 @@
+@model MPO_Web_Prj.Models.Report.ReportPagination
+
+@if (Model.TotalPages > 1)
+{
+    <nav class="pp-report__pagination" aria-label="Report pagination">
+        <button type="button" data-report-page="@(Model.Page - 1)" disabled="@(Model.Page <= 1)">Previous</button>
+        <span>Page @Model.Page / @Model.TotalPages</span>
+        <button type="button" data-report-page="@(Model.Page + 1)" disabled="@(Model.Page >= Model.TotalPages)">Next</button>
+    </nav>
+}

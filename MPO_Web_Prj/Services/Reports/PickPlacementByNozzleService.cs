@@ -53,6 +53,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                     StageOptions = stageOptions,
                     PartOptions = DefaultOptions(),
                     NozzleSlotOptions = DefaultOptions(),
+                    Pagination = ReportPaging.Create(filter.Page, 0),
                     Rows = []
                 };
             }
@@ -98,7 +99,15 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
 
             query = ApplyDateFilter(query, filter);
 
+            var totalRecords = await query.CountAsync(cancellationToken);
+            var pagination = ReportPaging.Create(filter.Page, totalRecords);
+            filter.Page = pagination.Page;
+
             var reportRows = await query
+                .OrderByDescending(log => log.report!.report_date)
+                .ThenByDescending(log => log.id)
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
                 .Select(log => new
                 {
                     PartName = log.nozzle_name ?? string.Empty,
@@ -122,9 +131,6 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                     MountMiss = log.n_m_miss_qty ?? 0,
                     TransferMiss = log.n_trs_miss_qty ?? 0
                 })
-                .OrderByDescending(row => row.PickupCount)
-                .ThenBy(row => row.PartName)
-                .ThenBy(row => row.LineName)
                 .ToListAsync(cancellationToken);
 
             return new PickPlacementByNozzleViewModel
@@ -135,6 +141,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                 StageOptions = stageOptions,
                 PartOptions = partOptions,
                 NozzleSlotOptions = nozzleSlotOptions,
+                Pagination = pagination,
                 Rows = reportRows.Select(row => new PickPlacementByNozzleRow
                 {
                     PartName = row.PartName,
@@ -316,6 +323,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
         return new PickPlacementByNozzleViewModel
         {
             Filter = filter,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

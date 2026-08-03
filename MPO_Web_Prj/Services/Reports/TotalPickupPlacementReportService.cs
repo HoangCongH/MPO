@@ -36,6 +36,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 {
                     Filter = filter,
                     LineOptions = lineOptions,
+                    Pagination = ReportPaging.Create(filter.Page, 0),
                     Rows = []
                 };
             }
@@ -93,12 +94,14 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 {
                     LineName = group.Key,
                     TotalPickup = group.Sum(report => (long)(report.count_pickup ?? 0)),
-                    TotalPlacement = group.Sum(report => (long)(report.count_mount ?? 0))
+                    TotalPlacement = group.Sum(report => (long)(report.count_mount ?? 0)),
+                    LatestReportDate = group.Max(report => report.report_date)
                 })
-                .OrderBy(row => row.LineName)
+                .OrderByDescending(row => row.LatestReportDate)
+                .ThenBy(row => row.LineName)
                 .ToListAsync(cancellationToken);
 
-            var rows = groupedRows
+            var allRows = groupedRows
                 .Select(row => new TotalPickupPlacementReportRow
                 {
                     LineName = row.LineName,
@@ -108,10 +111,18 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 })
                 .ToList();
 
+            var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+            filter.Page = pagination.Page;
+            var rows = allRows
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
+                .ToList();
+
             return new TotalPickupPlacementReportViewModel
             {
                 Filter = filter,
                 LineOptions = lineOptions,
+                Pagination = pagination,
                 Rows = rows
             };
         }
@@ -166,6 +177,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
         return new TotalPickupPlacementReportViewModel
         {
             Filter = filter,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

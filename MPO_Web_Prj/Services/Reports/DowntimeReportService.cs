@@ -36,6 +36,7 @@ public class DowntimeReportService : IDowntimeReportService
                 {
                     Filter = filter,
                     LineOptions = lineOptions,
+                    Pagination = ReportPaging.Create(filter.Page, 0),
                     Rows = []
                 };
             }
@@ -101,15 +102,25 @@ public class DowntimeReportService : IDowntimeReportService
                     TroubleStopCount = group.Sum(report => (long)(report.count_trbl ?? 0)),
                     TroubleStopTime = group.Sum(report => report.time_trbl ?? 0),
                     PartExhaustStopCount = group.Sum(report => (long)(report.count_pwait ?? 0)),
-                    PartExhaustStopTime = group.Sum(report => report.time_pwait ?? 0)
+                    PartExhaustStopTime = group.Sum(report => report.time_pwait ?? 0),
+                    LatestReportDate = group.Max(report => report.report_date)
                 })
-                .OrderBy(row => row.LineName)
+                .OrderByDescending(row => row.LatestReportDate)
+                .ThenBy(row => row.LineName)
                 .ToListAsync(cancellationToken);
+
+            var pagination = ReportPaging.Create(filter.Page, rows.Count);
+            filter.Page = pagination.Page;
+            rows = rows
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
+                .ToList();
 
             return new DowntimeReportViewModel
             {
                 Filter = filter,
                 LineOptions = lineOptions,
+                Pagination = pagination,
                 Rows = rows
             };
         }
@@ -154,6 +165,7 @@ public class DowntimeReportService : IDowntimeReportService
         return new DowntimeReportViewModel
         {
             Filter = filter,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

@@ -50,6 +50,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
                 MachineNameOptions = machineNameOptions,
                 StageOptions = stageOptions,
                 PartOptions = DefaultOptions(),
+                Pagination = ReportPaging.Create(filter.Page, 0),
                 Rows = []
             };
         }
@@ -128,16 +129,18 @@ public class PickPlacementByPartService : IPickPlacementByPartService
                 HeightMiss = group.Sum(log => log.f_h_miss_qty ?? 0),
                 DropMiss = group.Sum(log => log.f_d_miss_qty ?? 0),
                 MountMiss = group.Sum(log => log.f_m_miss_qty ?? 0),
-                TransferMiss = group.Sum(log => log.f_trs_miss_qty ?? 0)
+                TransferMiss = group.Sum(log => log.f_trs_miss_qty ?? 0),
+                LatestReportDate = group.Max(log => log.report!.report_date)
             })
-            .OrderByDescending(row => row.PickupCount)
+            .OrderByDescending(row => row.LatestReportDate)
+            .ThenByDescending(row => row.PickupCount)
             .ThenBy(row => row.LineName)
             .ThenBy(row => row.MachineName)
             .ThenBy(row => row.Stage)
             .ThenBy(row => row.PartName)
             .ToListAsync(cancellationToken);
 
-        var rows = groupedRows
+        var allRows = groupedRows
             .Select(row => new PickPlacementByPartRow
             {
                 LineName = row.LineName,
@@ -156,6 +159,13 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             })
             .ToList();
 
+        var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+        filter.Page = pagination.Page;
+        var rows = allRows
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
+            .ToList();
+
         return new PickPlacementByPartViewModel
         {
             Filter = filter,
@@ -163,6 +173,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             MachineNameOptions = machineNameOptions,
             StageOptions = stageOptions,
             PartOptions = partOptions,
+            Pagination = pagination,
             Rows = rows
         };
         }
@@ -256,6 +267,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
         return new PickPlacementByPartViewModel
         {
             Filter = filter,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

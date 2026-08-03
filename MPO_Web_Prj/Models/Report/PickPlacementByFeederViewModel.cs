@@ -18,6 +18,8 @@ public class PickPlacementByFeederViewModel
 
     public IReadOnlyList<PickPlacementByFeederRow> Rows { get; set; } = [];
 
+    public ReportPagination Pagination { get; set; } = new();
+
     public string? ErrorMessage { get; set; }
 }
 
@@ -44,6 +46,8 @@ public class PickPlacementByFeederFilter
     public DateOnly? EndDate { get; set; }
 
     public TimeOnly? EndTime { get; set; }
+
+    public int Page { get; set; } = 1;
 }
 
 public class PickPlacementByFeederRow

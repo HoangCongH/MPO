@@ -51,6 +51,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     PartOptions = DefaultOptions(),
                     FeederIdOptions = DefaultOptions(),
                     FeederSlotOptions = DefaultOptions(),
+                    Pagination = ReportPaging.Create(filter.Page, 0),
                     Rows = []
                 };
             }
@@ -111,7 +112,15 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
             query = ApplyDateFilter(query, filter);
 
+            var totalRecords = await query.CountAsync(cancellationToken);
+            var pagination = ReportPaging.Create(filter.Page, totalRecords);
+            filter.Page = pagination.Page;
+
             var reportRows = await query
+                .OrderByDescending(log => log.report!.report_date)
+                .ThenByDescending(log => log.id)
+                .Skip(pagination.Skip)
+                .Take(pagination.PageSize)
                 .Select(log => new
                 {
                     PartName = log.part_name ?? string.Empty,
@@ -136,9 +145,6 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     MountMiss = log.f_m_miss_qty ?? 0,
                     TransferMiss = log.f_trs_miss_qty ?? 0
                 })
-                .OrderByDescending(row => row.PickupCount)
-                .ThenBy(row => row.PartName)
-                .ThenBy(row => row.LineName)
                 .ToListAsync(cancellationToken);
 
             return new PickPlacementByFeederViewModel
@@ -150,6 +156,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                 PartOptions = partOptions,
                 FeederIdOptions = feederIdOptions,
                 FeederSlotOptions = feederSlotOptions,
+                Pagination = pagination,
                 Rows = reportRows.Select(row => new PickPlacementByFeederRow
                 {
                     PartName = row.PartName,
@@ -372,6 +379,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         return new PickPlacementByFeederViewModel
         {
             Filter = filter,
+            Pagination = ReportPaging.Create(filter.Page, 0),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }
