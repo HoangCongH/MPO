@@ -9,7 +9,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="dashboard-shell">
-    <aside class="app-sidebar">
+    <button class="app-sidebar-toggle"
+            type="button"
+            aria-label="Toggle sidebar"
+            aria-controls="appSidebar"
+            aria-expanded="true">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <aside class="app-sidebar" id="appSidebar">
         <a class="app-sidebar__brand" asp-controller="Dashboard" asp-action="Index">MES Dashboard</a>
 
         <nav class="app-sidebar__nav">
@@ -34,6 +44,28 @@
         @RenderBody()
     </main>
     <script>
+        (() => {
+            const storageKey = 'mpo-sidebar-collapsed';
+            const toggle = document.querySelector('.app-sidebar-toggle');
+
+            if (!toggle) {
+                return;
+            }
+
+            const setCollapsed = isCollapsed => {
+                document.body.classList.toggle('is-sidebar-collapsed', isCollapsed);
+                toggle.setAttribute('aria-expanded', (!isCollapsed).toString());
+                localStorage.setItem(storageKey, isCollapsed ? 'true' : 'false');
+                window.setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+            };
+
+            setCollapsed(localStorage.getItem(storageKey) === 'true');
+
+            toggle.addEventListener('click', () => {
+                setCollapsed(!document.body.classList.contains('is-sidebar-collapsed'));
+            });
+        })();
+
         (() => {
             const pathParts = window.location.pathname.split('/').filter(Boolean);
             const currentController = (pathParts[0] || 'Dashboard').toLowerCase();

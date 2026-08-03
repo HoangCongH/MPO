@@ -2,6 +2,12 @@ html {
   font-size: 16px;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
   box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
 }
@@ -249,19 +255,93 @@ body {
 }
 
 .dashboard-shell {
+  --app-main-padding: clamp(12px, 1.6vw, 24px);
+  --sidebar-width: 260px;
   background: #eef2f5;
   color: #111827;
-  display: flex;
+  display: grid;
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100vh;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  min-height: 100dvh;
+  overflow: hidden;
+  transition: grid-template-columns .26s ease;
+}
+
+.dashboard-shell.is-sidebar-collapsed {
+  --sidebar-width: 0px;
 }
 
 .app-sidebar {
   background: #12384a;
   color: #fff;
-  flex: 0 0 260px;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 20px 16px;
+  transition: opacity .18s ease, padding .26s ease, transform .26s ease;
+  width: 260px;
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-sidebar {
+  opacity: 0;
+  padding-left: 0;
+  padding-right: 0;
+  pointer-events: none;
+  transform: translateX(-18px);
+}
+
+.app-sidebar-toggle {
+  align-items: center;
+  background: #00d5ff;
+  border: 1px solid rgba(3, 21, 29, .18);
+  border-radius: 999px;
+  box-shadow: 0 8px 20px rgba(17, 56, 74, .22);
+  cursor: pointer;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  height: 38px;
+  justify-content: center;
+  left: calc(var(--sidebar-width) - 19px);
+  padding: 0;
+  position: fixed;
+  top: 16px;
+  transition: background-color .18s ease, box-shadow .18s ease, left .26s ease, transform .18s ease;
+  width: 38px;
+  z-index: 20;
+}
+
+.app-sidebar-toggle:hover {
+  background: #28e1ff;
+  box-shadow: 0 10px 24px rgba(17, 56, 74, .28);
+  transform: translateY(-1px);
+}
+
+.app-sidebar-toggle span {
+  background: #03151d;
+  border-radius: 999px;
+  display: block;
+  height: 2px;
+  transform-origin: center;
+  transition: opacity .18s ease, transform .22s ease, width .22s ease;
+  width: 16px;
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle {
+  left: 14px;
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
 }
 
 .app-sidebar__brand {
@@ -317,10 +397,16 @@ body {
 }
 
 .app-main {
-  flex: 1;
+  height: 100dvh;
   min-width: 0;
   overflow: auto;
-  padding: 24px;
+  padding: var(--app-main-padding);
+  scrollbar-gutter: stable;
+  transition: padding-left .26s ease;
+}
+
+.dashboard-shell.is-sidebar-collapsed .app-main {
+  padding-left: max(var(--app-main-padding), 64px);
 }
 
 .dashboard-home h1 {
@@ -379,7 +465,7 @@ body {
   box-shadow: 0 2px 8px rgba(17, 56, 74, .08);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 48px);
+  height: calc(100dvh - (var(--app-main-padding) * 2));
   margin: 0 auto;
   max-width: 1500px;
   overflow: hidden;
@@ -530,6 +616,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
+  scrollbar-gutter: stable;
   width: 100%;
 }
 
@@ -690,8 +777,9 @@ body {
 }
 
 .pp-report__table-wrap {
-  max-height: calc(100vh - 240px);
+  max-height: calc(100dvh - clamp(190px, 22dvh, 240px));
   overflow: auto;
+  scrollbar-gutter: stable;
   width: 100%;
 }
 
@@ -862,16 +950,46 @@ body {
 
 @media (max-width: 900px) {
   .dashboard-shell {
-    flex-direction: column;
+    --sidebar-width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: auto;
   }
 
   .app-sidebar {
-    flex-basis: auto;
+    height: auto;
     min-height: auto;
+    width: 100%;
   }
 
   .app-main {
+    height: auto;
+    min-height: 0;
     padding: 14px;
+  }
+
+  .app-sidebar-toggle {
+    left: auto;
+    right: 14px;
+  }
+
+  .dashboard-shell.is-sidebar-collapsed {
+    grid-template-rows: 0 minmax(0, 1fr);
+  }
+
+  .dashboard-shell.is-sidebar-collapsed .app-sidebar {
+    height: 0;
+    transform: translateY(-18px);
+  }
+
+  .dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle {
+    left: auto;
+    right: 14px;
+  }
+
+  .dashboard-shell.is-sidebar-collapsed .app-main {
+    padding-left: 14px;
+    padding-top: 58px;
   }
 
   .board-count-grid,
