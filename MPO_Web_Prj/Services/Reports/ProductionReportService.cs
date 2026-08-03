@@ -144,7 +144,7 @@ public class ProductionReportService : IProductionReportService
             }
         }
 
-        var rows = await query
+        var rowsQuery = query
             .GroupBy(report => new
             {
                 LineName = report.machine != null && report.machine.line != null
@@ -167,11 +167,19 @@ public class ProductionReportService : IProductionReportService
                 StartTime = group.Min(report => report.report_date),
                 EndTime = group.Max(report => report.report_date)
             })
-            .OrderBy(row => row.StartTime)
+            .OrderByDescending(row => row.EndTime)
             .ThenBy(row => row.LineName)
             .ThenBy(row => row.Lane)
             .ThenBy(row => row.ModelName)
-            .ThenBy(row => row.GroupName)
+            .ThenBy(row => row.GroupName);
+
+        var totalRecords = await rowsQuery.CountAsync(cancellationToken);
+        var pagination = ReportPaging.Create(filter.Page, totalRecords);
+        filter.Page = pagination.Page;
+
+        var rows = await rowsQuery
+            .Skip(pagination.Skip)
+            .Take(pagination.PageSize)
             .ToListAsync(cancellationToken);
 
         return new ProductionReportViewModel
@@ -179,6 +187,7 @@ public class ProductionReportService : IProductionReportService
             Filter = filter,
             LineOptions = lineOptions,
             ModelOptions = modelOptions,
+            Pagination = pagination,
             Rows = rows
         };
         }

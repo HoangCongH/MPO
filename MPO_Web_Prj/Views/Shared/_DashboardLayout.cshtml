@@ -4,6 +4,17 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MES Dashboard</title>
+    <script>
+        (() => {
+            try {
+                if (localStorage.getItem('mpo-sidebar-collapsed') === 'true') {
+                    document.documentElement.classList.add('is-sidebar-collapsed');
+                }
+            } catch {
+                // Keep the default expanded layout if storage is unavailable.
+            }
+        })();
+    </script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -53,6 +64,7 @@
             }
 
             const setCollapsed = isCollapsed => {
+                document.documentElement.classList.toggle('is-sidebar-collapsed', isCollapsed);
                 document.body.classList.toggle('is-sidebar-collapsed', isCollapsed);
                 toggle.setAttribute('aria-expanded', (!isCollapsed).toString());
                 localStorage.setItem(storageKey, isCollapsed ? 'true' : 'false');

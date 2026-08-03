@@ -267,6 +267,7 @@ body {
   transition: grid-template-columns .26s ease;
 }
 
+html.is-sidebar-collapsed .dashboard-shell,
 .dashboard-shell.is-sidebar-collapsed {
   --sidebar-width: 0px;
 }
@@ -283,6 +284,7 @@ body {
   width: 260px;
 }
 
+html.is-sidebar-collapsed .app-sidebar,
 .dashboard-shell.is-sidebar-collapsed .app-sidebar {
   opacity: 0;
   padding-left: 0;
@@ -328,20 +330,9 @@ body {
   width: 16px;
 }
 
+html.is-sidebar-collapsed .app-sidebar-toggle,
 .dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle {
   left: 14px;
-}
-
-.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(1) {
-  transform: translateY(6px) rotate(45deg);
-}
-
-.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(2) {
-  opacity: 0;
-}
-
-.dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle span:nth-child(3) {
-  transform: translateY(-6px) rotate(-45deg);
 }
 
 .app-sidebar__brand {
@@ -405,6 +396,7 @@ body {
   transition: padding-left .26s ease;
 }
 
+html.is-sidebar-collapsed .app-main,
 .dashboard-shell.is-sidebar-collapsed .app-main {
   padding-left: max(var(--app-main-padding), 64px);
 }
@@ -783,6 +775,20 @@ body {
   width: 100%;
 }
 
+.pp-report__record-count {
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: -6px 0 8px;
+  text-align: right;
+}
+
+.overall-dashboard__panel .pp-report__record-count {
+  font-size: 12px;
+  margin: -2px 0 4px;
+}
+
 .pp-report__table {
   border-collapse: collapse;
   min-width: 1495px;
@@ -973,20 +979,24 @@ body {
     right: 14px;
   }
 
+  html.is-sidebar-collapsed .dashboard-shell,
   .dashboard-shell.is-sidebar-collapsed {
     grid-template-rows: 0 minmax(0, 1fr);
   }
 
+  html.is-sidebar-collapsed .app-sidebar,
   .dashboard-shell.is-sidebar-collapsed .app-sidebar {
     height: 0;
     transform: translateY(-18px);
   }
 
+  html.is-sidebar-collapsed .app-sidebar-toggle,
   .dashboard-shell.is-sidebar-collapsed .app-sidebar-toggle {
     left: auto;
     right: 14px;
   }
 
+  html.is-sidebar-collapsed .app-main,
   .dashboard-shell.is-sidebar-collapsed .app-main {
     padding-left: 14px;
     padding-top: 58px;
