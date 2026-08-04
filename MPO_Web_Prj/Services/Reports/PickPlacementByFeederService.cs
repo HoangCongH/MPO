@@ -112,38 +112,42 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
             query = ApplyDateFilter(query, filter);
 
-            var totalRecords = await query.CountAsync(cancellationToken);
+            var groupedQuery = query.GroupBy(log => new
+            {
+                PartName = log.part_name,
+                LineName = log.report!.machine != null ? log.report.machine.line : null,
+                MachineName = log.report!.machine != null ? log.report.machine.machine_name : null,
+                Stage = log.report!.machine != null ? log.report.machine.stage : null,
+                FeederId = log.blk_serial,
+                FeederAdd = log.f_add,
+                FeederSubAdd = log.fs_add
+            });
+
+            var totalRecords = await groupedQuery.CountAsync(cancellationToken);
             var pagination = ReportPaging.Create(filter.Page, totalRecords);
             filter.Page = pagination.Page;
 
-            var reportRows = await query
-                .OrderByDescending(log => log.report!.report_date)
-                .ThenByDescending(log => log.id)
+            var reportRows = await groupedQuery
+                .OrderByDescending(g => g.Max(log => log.report!.report_date))
                 .Skip(pagination.Skip)
                 .Take(pagination.PageSize)
-                .Select(log => new
+                .Select(g => new
                 {
-                    PartName = log.part_name ?? string.Empty,
-                    LineName = log.report!.machine != null && log.report.machine.line != null
-                        ? log.report.machine.line
-                        : string.Empty,
-                    MachineName = log.report!.machine != null && log.report.machine.machine_name != null
-                        ? log.report.machine.machine_name
-                        : string.Empty,
-                    Stage = log.report!.machine != null && log.report.machine.stage != null
-                        ? log.report.machine.stage.Value.ToString()
-                        : string.Empty,
-                    FeederId = log.blk_serial ?? string.Empty,
-                    FeederAdd = log.f_add ?? string.Empty,
-                    FeederSubAdd = log.fs_add,
-                    PickupCount = log.f_pickup_qty ?? 0,
-                    PlacementCount = log.f_mount_qty ?? 0,
-                    PickupMiss = log.f_p_miss_qty ?? 0,
-                    RecogMiss = log.f_r_miss_qty ?? 0,
-                    HeightMiss = log.f_h_miss_qty ?? 0,
-                    DropMiss = log.f_d_miss_qty ?? 0,
-                    MountMiss = log.f_m_miss_qty ?? 0,
-                    TransferMiss = log.f_trs_miss_qty ?? 0
+                    PartName = g.Key.PartName ?? string.Empty,
+                    LineName = g.Key.LineName ?? string.Empty,
+                    MachineName = g.Key.MachineName ?? string.Empty,
+                    Stage = g.Key.Stage != null ? g.Key.Stage.ToString() : string.Empty,
+                    FeederId = g.Key.FeederId ?? string.Empty,
+                    FeederAdd = g.Key.FeederAdd ?? string.Empty,
+                    FeederSubAdd = g.Key.FeederSubAdd,
+                    PickupCount = g.Sum(log => log.f_pickup_qty ?? 0),
+                    PlacementCount = g.Sum(log => log.f_mount_qty ?? 0),
+                    PickupMiss = g.Sum(log => log.f_p_miss_qty ?? 0),
+                    RecogMiss = g.Sum(log => log.f_r_miss_qty ?? 0),
+                    HeightMiss = g.Sum(log => log.f_h_miss_qty ?? 0),
+                    DropMiss = g.Sum(log => log.f_d_miss_qty ?? 0),
+                    MountMiss = g.Sum(log => log.f_m_miss_qty ?? 0),
+                    TransferMiss = g.Sum(log => log.f_trs_miss_qty ?? 0)
                 })
                 .ToListAsync(cancellationToken);
 

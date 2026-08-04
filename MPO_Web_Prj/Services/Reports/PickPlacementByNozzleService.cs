@@ -99,37 +99,40 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
 
             query = ApplyDateFilter(query, filter);
 
-            var totalRecords = await query.CountAsync(cancellationToken);
+            var groupedQuery = query.GroupBy(log => new
+            {
+                PartName = log.nozzle_name,
+                LineName = log.report!.machine != null ? log.report.machine.line : null,
+                MachineName = log.report!.machine != null ? log.report.machine.machine_name : null,
+                Stage = log.report!.machine != null ? log.report.machine.stage : null,
+                NozzleSlot = log.nh_add,
+                NozzleChangerSlot = log.nc_add
+            });
+
+            var totalRecords = await groupedQuery.CountAsync(cancellationToken);
             var pagination = ReportPaging.Create(filter.Page, totalRecords);
             filter.Page = pagination.Page;
 
-            var reportRows = await query
-                .OrderByDescending(log => log.report!.report_date)
-                .ThenByDescending(log => log.id)
+            var reportRows = await groupedQuery
+                .OrderByDescending(g => g.Max(log => log.report!.report_date))
                 .Skip(pagination.Skip)
                 .Take(pagination.PageSize)
-                .Select(log => new
+                .Select(g => new
                 {
-                    PartName = log.nozzle_name ?? string.Empty,
-                    LineName = log.report!.machine != null && log.report.machine.line != null
-                        ? log.report.machine.line
-                        : string.Empty,
-                    MachineName = log.report!.machine != null && log.report.machine.machine_name != null
-                        ? log.report.machine.machine_name
-                        : string.Empty,
-                    Stage = log.report!.machine != null && log.report.machine.stage != null
-                        ? log.report.machine.stage.Value.ToString()
-                        : string.Empty,
-                    NozzleSlot = log.nh_add,
-                    NozzleChangerSlot = log.nc_add ?? string.Empty,
-                    PickupCount = log.n_pickup_qty ?? 0,
-                    PlacementCount = log.n_mount_qty ?? 0,
-                    PickupMiss = log.n_p_miss_qty ?? 0,
-                    RecogMiss = log.n_r_miss_qty ?? 0,
-                    HeightMiss = log.n_h_miss_qty ?? 0,
-                    DropMiss = log.n_d_miss_qty ?? 0,
-                    MountMiss = log.n_m_miss_qty ?? 0,
-                    TransferMiss = log.n_trs_miss_qty ?? 0
+                    PartName = g.Key.PartName ?? string.Empty,
+                    LineName = g.Key.LineName ?? string.Empty,
+                    MachineName = g.Key.MachineName ?? string.Empty,
+                    Stage = g.Key.Stage != null ? g.Key.Stage.ToString() : string.Empty,
+                    NozzleSlot = g.Key.NozzleSlot,
+                    NozzleChangerSlot = g.Key.NozzleChangerSlot ?? string.Empty,
+                    PickupCount = g.Sum(log => log.n_pickup_qty ?? 0),
+                    PlacementCount = g.Sum(log => log.n_mount_qty ?? 0),
+                    PickupMiss = g.Sum(log => log.n_p_miss_qty ?? 0),
+                    RecogMiss = g.Sum(log => log.n_r_miss_qty ?? 0),
+                    HeightMiss = g.Sum(log => log.n_h_miss_qty ?? 0),
+                    DropMiss = g.Sum(log => log.n_d_miss_qty ?? 0),
+                    MountMiss = g.Sum(log => log.n_m_miss_qty ?? 0),
+                    TransferMiss = g.Sum(log => log.n_trs_miss_qty ?? 0)
                 })
                 .ToListAsync(cancellationToken);
 
