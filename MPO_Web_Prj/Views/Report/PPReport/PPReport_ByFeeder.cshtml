@@ -1,4 +1,4 @@
-﻿@model MPO_Web_Prj.Models.Report.PickPlacementByFeederViewModel
+@model MPO_Web_Prj.Models.Report.PickPlacementByFeederViewModel
 
 @{
     ViewData["Title"] = "Pick-Placement report by Feeder";
@@ -66,7 +66,10 @@
         <div class="report-error">@Model.ErrorMessage</div>
     }
 
-    <div class="pp-report__record-count">@Model.Rows.Count records</div>
+    <div class="pp-report__header-actions">
+        <div class="pp-report__record-count">@Model.Rows.Count records</div>
+        <partial name="~/Views/Shared/_ReportPagination.cshtml" model="Model.Pagination" />
+    </div>
 
     <div class="pp-report__table-wrap">
         <table class="pp-report__table pp-report__table--wide">

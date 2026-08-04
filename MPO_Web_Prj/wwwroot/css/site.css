@@ -1009,3 +1009,30 @@ html.is-sidebar-collapsed .app-main,
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.pp-report__header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -6px 0 8px;
+}
+.pp-report__header-actions .pp-report__record-count {
+  margin: 0;
+}
+.pp-report__pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.pp-report__pagination button {
+  background: #00a842;
+  border: none;
+  color: #050505;
+  padding: 4px 12px;
+  cursor: pointer;
+}
+.pp-report__pagination button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

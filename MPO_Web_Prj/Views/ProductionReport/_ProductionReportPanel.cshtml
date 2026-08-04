@@ -51,7 +51,10 @@
         </div>
     }
 
-    <div class="pp-report__record-count">@Model.Rows.Count records</div>
+    <div class="pp-report__header-actions">
+        <div class="pp-report__record-count">@Model.Rows.Count records</div>
+        <partial name="~/Views/Shared/_ReportPagination.cshtml" model="Model.Pagination" />
+    </div>
 
     <div class="pp-report__table-wrap">
         <table class="pp-report__table pp-report__table--production">

@@ -241,6 +241,50 @@
                 });
             });
         })();
+
+        (() => {
+            document.addEventListener('click', event => {
+                const button = event.target.closest('[data-report-page]');
+                if (!button) {
+                    return;
+                }
+
+                const form = document.querySelector('form.pp-report__filter');
+                if (!form) {
+                    return;
+                }
+
+                let pageInput = form.querySelector('input[name="Filter.Page"]');
+                if (!pageInput) {
+                    pageInput = document.createElement('input');
+                    pageInput.type = 'hidden';
+                    pageInput.name = 'Filter.Page';
+                    form.appendChild(pageInput);
+                }
+                
+                pageInput.value = button.dataset.reportPage;
+
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.click();
+                } else {
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                    if (!form.dataset.isSubmitting) {
+                        form.submit();
+                    }
+                }
+            });
+
+            document.querySelectorAll('form.pp-report__filter').forEach(form => {
+                form.addEventListener('submit', () => {
+                    const pageInput = form.querySelector('input[name="Filter.Page"]');
+                    if (pageInput && !form.dataset.isSubmitting && !event?.target?.closest?.('[data-report-page]')) {
+                        // Reset page to 1 on regular filter apply
+                        pageInput.value = '1';
+                    }
+                });
+            });
+        })();
     </script>
 </body>
 </html>
