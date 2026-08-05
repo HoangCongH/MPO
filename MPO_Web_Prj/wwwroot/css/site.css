@@ -1036,3 +1036,91 @@ html.is-sidebar-collapsed .app-main,
   background: #ccc;
   cursor: not-allowed;
 }
+
+/* Searchable Select Custom UI */
+.searchable-select {
+  position: relative;
+  display: inline-block;
+}
+
+.searchable-select__trigger {
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left;
+}
+
+.searchable-select--prod .searchable-select__trigger {
+  background-color: #f7f7f7;
+}
+
+.searchable-select__trigger-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.searchable-select__trigger-icon {
+  margin-left: 8px;
+  font-size: 0.8em;
+  color: #666;
+}
+
+.searchable-select__menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  min-width: max-content;
+  background: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  margin-top: 2px;
+}
+
+.searchable-select__menu.is-open {
+  display: block;
+}
+
+.searchable-select__search {
+  width: calc(100% - 16px);
+  margin: 8px;
+  padding: 6px;
+  border: 1px solid #aaa;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.searchable-select__options {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.searchable-select__option {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.searchable-select__option:hover {
+  background-color: #f0f0f0;
+}
+
+.searchable-select__option.is-selected {
+  background-color: #e0f0ff;
+  font-weight: bold;
+}
+
+.searchable-select__empty {
+  padding: 8px 12px;
+  color: #888;
+  font-size: 14px;
+  font-style: italic;
+}
