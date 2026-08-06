@@ -6,7 +6,7 @@
 }
 
 <section class="pp-report">
-    <h1 class="pp-report__title">PICK-PLACEMENT REPORT BY FEEDER</h1>
+    <h1 class="pp-report__title"><i data-lucide="cpu" style="margin-right: 8px;"></i>PICK-PLACEMENT REPORT BY FEEDER</h1>
 
     <form class="pp-report__filter"
           asp-controller="PPReport_ByFeeder"
@@ -52,12 +52,13 @@
             <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
         </div>
 
-        <button class="pp-report__button" type="submit">Apply</button>
+        <button class="pp-report__button" type="submit"><i data-lucide="filter" style="width: 16px; margin-right: 6px;"></i>Apply</button>
 
         <button class="pp-report__button"
                 type="submit"
-                asp-action="ExportExcel">
-            Export Excel
+                asp-action="ExportExcel"
+                style="background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;">
+            <i data-lucide="download" style="width: 16px; margin-right: 6px;"></i>Export Excel
         </button>
     </form>
 

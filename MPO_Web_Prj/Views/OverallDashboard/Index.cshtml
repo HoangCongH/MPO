@@ -22,7 +22,7 @@
         values = Model.ErrorStopTime.Select(slice => slice.Value)
     };
 
-    var errorStopColors = new[] { "#1b6b87", "#f26f2d", "#7a9a01", "#7b3fb2", "#2e8b57", "#c04c7a" };
+    var errorStopColors = new[] { "#6366F1", "#38BDF8", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6" };
     var errorStopTotal = Model.ErrorStopTime.Sum(slice => slice.Value);
 }
 
@@ -43,38 +43,18 @@
 
         <div class="pp-report__field">
             <label asp-for="BoardProduced.Filter.StartDate">Start</label>
-            <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
-            <select id="StartTime" name="StartTime" required>
-                @foreach (var option in CreateHourOptions(Model.BoardProduced.Filter.StartTime))
-                {
-                    if (option.Selected)
-                    {
-                        <option value="@option.Value" selected>@option.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@option.Value">@option.Text</option>
-                    }
-                }
-            </select>
+            <div style="display: flex; gap: 8px;">
+                <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
+                <input asp-for="BoardProduced.Filter.StartTime" name="StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" required />
+            </div>
         </div>
 
         <div class="pp-report__field">
             <label asp-for="BoardProduced.Filter.EndDate">End</label>
-            <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
-            <select id="EndTime" name="EndTime" required>
-                @foreach (var option in CreateHourOptions(Model.BoardProduced.Filter.EndTime))
-                {
-                    if (option.Selected)
-                    {
-                        <option value="@option.Value" selected>@option.Text</option>
-                    }
-                    else
-                    {
-                        <option value="@option.Value">@option.Text</option>
-                    }
-                }
-            </select>
+            <div style="display: flex; gap: 8px;">
+                <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
+                <input asp-for="BoardProduced.Filter.EndTime" name="EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" required />
+            </div>
         </div>
 
         <button class="pp-report__button" type="submit">Apply</button>
@@ -210,7 +190,7 @@
 <script>
     const overallBoardCharts = @Html.Raw(JsonSerializer.Serialize(boardPayload));
     const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
-    const overallDashboardColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
+    const overallDashboardColors = ['#6366F1', '#38BDF8', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
 
     overallBoardCharts.forEach((chart, index) => {
         const canvas = document.getElementById(`overallBoardProducedChart${index}`);
@@ -231,14 +211,14 @@
                 }))
             },
             options: {
-                animation: false,
+                animation: true,
                 maintainAspectRatio: false,
                 normalized: true,
                 responsive: true,
                 plugins: {
                     legend: {
                         position: 'bottom',
-                        labels: { boxWidth: 10, font: { size: 12 } }
+                        labels: { boxWidth: 10, font: { size: 12 }, color: '#B6C2D9' }
                     }
                 },
                 scales: {
@@ -250,7 +230,8 @@
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        grid: { color: '#d8dde2' }
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#B6C2D9' }
                     }
                 },
                 datasets: {
@@ -269,7 +250,7 @@
                 datasets: [{
                     data: overallErrorStopChart.values,
                     backgroundColor: overallDashboardColors,
-                    borderColor: '#fff',
+                    borderColor: '#1D2645',
                     borderWidth: 2
                 }]
             },

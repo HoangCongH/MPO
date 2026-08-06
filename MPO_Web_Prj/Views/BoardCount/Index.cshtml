@@ -56,14 +56,18 @@
 
         <div class="pp-report__field">
             <label asp-for="Filter.StartDate">Start</label>
-            <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
-            <select asp-for="Filter.StartTime" asp-items="CreateHourOptions(Model.Filter.StartTime)"></select>
+            <div style="display: flex; gap: 8px;">
+                <input asp-for="Filter.StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <input asp-for="Filter.StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+            </div>
         </div>
 
         <div class="pp-report__field">
             <label asp-for="Filter.EndDate">End</label>
-            <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
-            <select asp-for="Filter.EndTime" asp-items="CreateHourOptions(Model.Filter.EndTime)"></select>
+            <div style="display: flex; gap: 8px;">
+                <input asp-for="Filter.EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+                <input asp-for="Filter.EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" />
+            </div>
         </div>
 
         <button class="pp-report__button" type="submit">Apply</button>

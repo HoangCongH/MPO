@@ -4,47 +4,111 @@
 }
 
 <section class="dashboard-home">
-    <h1>Dashboard</h1>
+    <h1 style="font-size: 20px; margin-bottom: 24px;">Quick Access</h1>
 
     <div class="dashboard-home__grid">
         <a class="dashboard-card" asp-controller="BoardCount" asp-action="Index">
-            <span class="dashboard-card__label">Board count</span>
-            <span class="dashboard-card__meta">Board count by line and lane</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(56, 189, 248, 0.1); color: var(--color-secondary); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="hash"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">Board count</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">By line and lane</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="ProductionReport" asp-action="Index">
-            <span class="dashboard-card__label">Production Report</span>
-            <span class="dashboard-card__meta">Production quantity by line and model</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(99, 102, 241, 0.1); color: var(--color-primary); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="file-text"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">Production Report</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Quantity by line/model</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="PPReport_ByPart" asp-action="Index">
-            <span class="dashboard-card__label">Pick-Placement by Part</span>
-            <span class="dashboard-card__meta">SUM feeder counts and misses by part</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(34, 197, 94, 0.1); color: var(--color-success); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="box"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">By Part</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Counts & misses by part</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="PPReport_ByFeeder" asp-action="Index">
-            <span class="dashboard-card__label">Pick-Placement by Feeder</span>
-            <span class="dashboard-card__meta">SUM feeder counts and misses by feeder</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="cpu"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">By Feeder</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Counts & misses by feeder</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="PPReport_ByNozzle" asp-action="Index">
-            <span class="dashboard-card__label">Pick-Placement by Nozzle</span>
-            <span class="dashboard-card__meta">SUM nozzle counts and misses by nozzle slot</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(239, 68, 68, 0.1); color: var(--color-danger); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="crosshair"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">By Nozzle</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Counts & misses by nozzle</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="CycleTimeReport" asp-action="Index">
-            <span class="dashboard-card__label">Cycle Time Report</span>
-            <span class="dashboard-card__meta">Cycle time by line, model, and group</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(56, 189, 248, 0.1); color: var(--color-secondary); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="clock"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">Cycle Time</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">By line, model & group</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="DowntimeReport" asp-action="Index">
-            <span class="dashboard-card__label">Downtime Report</span>
-            <span class="dashboard-card__meta">Downtime count and time by line</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(245, 158, 11, 0.1); color: var(--color-warning); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="alert-circle"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">Downtime</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Count & time by line</span>
+            </div>
         </a>
 
         <a class="dashboard-card" asp-controller="TotalPickupPlacementReport" asp-action="Index">
-            <span class="dashboard-card__label">Total Pickup Placement Per Line</span>
-            <span class="dashboard-card__meta">Total pickup, placement, and PPM by line</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="background: rgba(34, 197, 94, 0.1); color: var(--color-success); padding: 12px; border-radius: 12px;">
+                    <i data-lucide="activity"></i>
+                </div>
+                <i data-lucide="arrow-up-right" style="color: var(--text-secondary); width: 16px;"></i>
+            </div>
+            <div style="margin-top: 16px;">
+                <span class="dashboard-card__meta" style="font-size: 18px; display: block; margin-bottom: 4px;">Total Pick/Place</span>
+                <span class="dashboard-card__label" style="font-size: 12px; opacity: 0.7;">Total pickup, placement, PPM</span>
+            </div>
         </a>
     </div>
 </section>

@@ -16,8 +16,10 @@
         })();
     </script>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/theme.css" asp-append-version="true" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="dashboard-shell">
     <button class="app-sidebar-toggle"
@@ -30,29 +32,69 @@
         <span></span>
     </button>
 
-    <aside class="app-sidebar" id="appSidebar">
-        <a class="app-sidebar__brand" asp-controller="Dashboard" asp-action="Index">MES Dashboard</a>
+    <aside class="app-sidebar" id="appSidebar" style="display: flex; flex-direction: column;">
+        <a class="app-sidebar__brand" asp-controller="Dashboard" asp-action="Index" style="text-decoration: none;">
+            <i data-lucide="monitor"></i> MES Dashboard
+        </a>
 
         <nav class="app-sidebar__nav">
-            <a class="app-sidebar__home" asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">Home</a>
+            <a class="app-sidebar__home" asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">
+                <i data-lucide="layout-dashboard"></i> Dashboard
+            </a>
 
             <span class="app-sidebar__section">Charts</span>
-            <a asp-controller="OverallDashboard" asp-action="Index" data-nav-controller="OverallDashboard" data-nav-action="Index">Overall Dashboard</a>
-            <a asp-controller="BoardCount" asp-action="Index" data-nav-controller="BoardCount" data-nav-action="Index">Board count</a>
+            <a asp-controller="OverallDashboard" asp-action="Index" data-nav-controller="OverallDashboard" data-nav-action="Index">
+                <i data-lucide="bar-chart-2"></i> Overall Dashboard
+            </a>
+            <a asp-controller="BoardCount" asp-action="Index" data-nav-controller="BoardCount" data-nav-action="Index">
+                <i data-lucide="hash"></i> Board count
+            </a>
 
             <span class="app-sidebar__section">Reports</span>
-            <a asp-controller="ProductionReport" asp-action="Index" data-nav-controller="ProductionReport" data-nav-action="Index">Production Report</a>
-            <a asp-controller="PPReport_ByPart" asp-action="Index" data-nav-controller="PPReport_ByPart" data-nav-action="Index">Pick-Placement by Part</a>
-            <a asp-controller="PPReport_ByFeeder" asp-action="Index" data-nav-controller="PPReport_ByFeeder" data-nav-action="Index">Pick-Placement by Feeder</a>
-            <a asp-controller="PPReport_ByNozzle" asp-action="Index" data-nav-controller="PPReport_ByNozzle" data-nav-action="Index">Pick-Placement by Nozzle</a>
-            <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">Cycle Time Report</a>
-            <a asp-controller="DowntimeReport" asp-action="Index" data-nav-controller="DowntimeReport" data-nav-action="Index">Downtime Report</a>
-            <a asp-controller="TotalPickupPlacementReport" asp-action="Index" data-nav-controller="TotalPickupPlacementReport" data-nav-action="Index">Total Pickup Placement Per Line</a>
+            <a asp-controller="ProductionReport" asp-action="Index" data-nav-controller="ProductionReport" data-nav-action="Index">
+                <i data-lucide="file-text"></i> Production Report
+            </a>
+            <a asp-controller="PPReport_ByPart" asp-action="Index" data-nav-controller="PPReport_ByPart" data-nav-action="Index">
+                <i data-lucide="box"></i> Pick-Placement by Part
+            </a>
+            <a asp-controller="PPReport_ByFeeder" asp-action="Index" data-nav-controller="PPReport_ByFeeder" data-nav-action="Index">
+                <i data-lucide="cpu"></i> Pick-Placement by Feeder
+            </a>
+            <a asp-controller="PPReport_ByNozzle" asp-action="Index" data-nav-controller="PPReport_ByNozzle" data-nav-action="Index">
+                <i data-lucide="crosshair"></i> Pick-Placement by Nozzle
+            </a>
+            <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">
+                <i data-lucide="clock"></i> Cycle Time Report
+            </a>
+            <a asp-controller="DowntimeReport" asp-action="Index" data-nav-controller="DowntimeReport" data-nav-action="Index">
+                <i data-lucide="alert-circle"></i> Downtime Report
+            </a>
+            <a asp-controller="TotalPickupPlacementReport" asp-action="Index" data-nav-controller="TotalPickupPlacementReport" data-nav-action="Index">
+                <i data-lucide="activity"></i> Total Pickup Placement
+            </a>
         </nav>
+        
+        <div style="flex-grow: 1;"></div>
     </aside>
 
-    <main class="app-main">
-        @RenderBody()
+    <main class="app-main" style="padding: 0;">
+        <header class="top-header">
+            <div>
+                <h1 style="font-size: 24px; margin: 0;">System Overview</h1>
+                <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 14px;">Monitor your production lines and reports.</p>
+            </div>
+            
+            <div class="header-actions">
+                <div class="header-search">
+                    <i data-lucide="search" style="width: 18px;"></i>
+                    <input type="text" placeholder="Search for anything..." />
+                </div>
+            </div>
+        </header>
+
+        <div style="padding: 0 24px 24px 24px;">
+            @RenderBody()
+        </div>
     </main>
     <script>
         (() => {
@@ -287,5 +329,21 @@
         })();
     </script>
     <script src="~/js/searchable-select.js"></script>
+    <script>
+        lucide.createIcons();
+        
+        // Chart.js Dark Theme Defaults
+        if (typeof Chart !== 'undefined') {
+            Chart.defaults.color = '#B6C2D9';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+            Chart.defaults.plugins.tooltip.backgroundColor = '#151C33';
+            Chart.defaults.plugins.tooltip.titleColor = '#FFFFFF';
+            Chart.defaults.plugins.tooltip.bodyColor = '#B6C2D9';
+            Chart.defaults.plugins.tooltip.borderColor = 'rgba(255,255,255,0.08)';
+            Chart.defaults.plugins.tooltip.borderWidth = 1;
+            Chart.defaults.plugins.legend.labels.color = '#B6C2D9';
+            Chart.defaults.animation.duration = 800;
+        }
+    </script>
 </body>
 </html>

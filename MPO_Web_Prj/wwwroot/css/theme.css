@@ -1,0 +1,483 @@
+/* Modern Dark Dashboard Theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Colors */
+  --bg-main: #0B1020;
+  --bg-sidebar: #151C33;
+  --bg-card: #1D2645;
+  --color-primary: #6366F1;
+  --color-primary-hover: #4F46E5;
+  --color-secondary: #38BDF8;
+  --color-success: #22C55E;
+  --color-warning: #F59E0B;
+  --color-danger: #EF4444;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B6C2D9;
+  
+  /* Borders & Shadows */
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-radius-sm: 6px;
+  --border-radius: 12px;
+  --border-radius-lg: 16px;
+  --border-radius-xl: 24px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  
+  /* Transitions */
+  --transition: all 0.2s ease-in-out;
+  
+  /* Fonts */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ==========================================================================
+   Global & Base
+   ========================================================================== */
+body, html, .report-page, .dashboard-shell {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-family) !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main); 
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-card); 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary); 
+}
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+h1, h2, h3, h4, h5, h6, 
+.dashboard-home h1, 
+.production-report__title,
+.pp-report__title {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+/* ==========================================================================
+   Layout: Sidebar
+   ========================================================================== */
+.app-sidebar {
+  background-color: var(--bg-sidebar) !important;
+  border-right: 1px solid var(--border-color);
+  padding: 24px 16px !important;
+}
+
+.app-sidebar__brand {
+  color: var(--text-primary) !important;
+  font-size: 24px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.05em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px !important;
+}
+.app-sidebar__brand i {
+  color: var(--color-primary);
+}
+
+.app-sidebar__nav {
+  gap: 8px !important;
+}
+
+.app-sidebar__nav a {
+  color: var(--text-secondary) !important;
+  border-radius: var(--border-radius-sm) !important;
+  padding: 12px 16px !important;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-sidebar__nav a:hover {
+  background-color: rgba(255,255,255,0.05) !important;
+  color: var(--text-primary) !important;
+  transform: translateX(4px);
+}
+
+.app-sidebar__nav a.is-active {
+  background-color: var(--color-primary) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.app-sidebar__section {
+  color: var(--text-secondary) !important;
+  font-size: 11px !important;
+  letter-spacing: 0.1em !important;
+  margin: 24px 12px 8px !important;
+  opacity: 0.6;
+}
+
+.app-sidebar-toggle {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+}
+.app-sidebar-toggle span {
+  background: var(--text-primary) !important;
+}
+
+/* ==========================================================================
+   Layout: Header
+   ========================================================================== */
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background-color: var(--bg-main);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  margin-bottom: 24px;
+}
+
+.header-search {
+  position: relative;
+  width: 300px;
+}
+.header-search input {
+  width: 100%;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  padding: 10px 16px 10px 40px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+.header-search input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+.header-search i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+.header-actions button {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+}
+.header-actions button:hover {
+  color: var(--text-primary);
+}
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #fff;
+}
+.user-info {
+  display: flex;
+  flex-direction: column;
+}
+.user-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.user-role {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Cards
+   ========================================================================== */
+.dashboard-card, 
+.overall-dashboard__panel, 
+.pp-report {
+  background-color: var(--bg-card) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-lg) !important;
+  box-shadow: var(--shadow) !important;
+  transition: var(--transition);
+}
+
+.overall-dashboard__panel {
+  height: auto !important;
+  min-height: min-content !important;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg) !important;
+  border-color: rgba(255,255,255,0.15) !important;
+}
+
+.dashboard-card__label {
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.dashboard-card__meta {
+  color: var(--text-primary) !important;
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  margin-top: 8px;
+}
+
+.overall-dashboard__panel h2 {
+  background: transparent !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color);
+  margin: 0 0 16px 0 !important;
+  padding: 0 0 12px 0 !important;
+  text-align: left !important;
+  font-size: 18px !important;
+}
+
+/* ==========================================================================
+   Forms & Filters
+   ========================================================================== */
+.production-report__filter,
+.pp-report__filter {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius);
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+}
+
+.production-report__field label,
+.pp-report__field label {
+  color: var(--text-secondary);
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  margin-bottom: 6px;
+}
+
+.production-report__field input,
+.production-report__field select,
+.pp-report__field input,
+.pp-report__field select {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--border-radius-sm) !important;
+  font-size: 14px !important;
+  height: 40px !important;
+  padding: 8px 12px !important;
+  transition: var(--transition);
+  color-scheme: dark;
+}
+
+.production-report__field input:hover,
+.production-report__field select:hover,
+.pp-report__field input:hover,
+.pp-report__field select:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.production-report__field input:focus,
+.production-report__field select:focus,
+.pp-report__field input:focus,
+.pp-report__field select:focus {
+  outline: none;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+.production-report__button,
+.pp-report__button {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: var(--border-radius-sm) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  height: 40px !important;
+  padding: 0 24px !important;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.production-report__button:hover,
+.pp-report__button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4) !important;
+}
+
+.production-report__separator {
+  color: var(--text-secondary);
+}
+
+/* ==========================================================================
+   Tables
+   ========================================================================== */
+.production-report__table-wrap,
+.pp-report__table-wrap,
+.overall-dashboard__table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: auto;
+  margin-top: 16px;
+}
+
+.production-report__table,
+.pp-report__table,
+.overall-dashboard__table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  white-space: nowrap;
+}
+
+.production-report__table th,
+.pp-report__table th,
+.overall-dashboard__table th {
+  background-color: var(--bg-sidebar) !important;
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 10px 12px !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  text-decoration: none !important;
+}
+
+.production-report__table td,
+.pp-report__table td,
+.overall-dashboard__table td {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+  padding: 10px 12px !important;
+  height: auto !important;
+  vertical-align: middle !important;
+}
+
+.production-report__table tbody tr,
+.pp-report__table tbody tr,
+.overall-dashboard__table tbody tr {
+  transition: var(--transition);
+}
+
+.production-report__table tbody tr:hover td,
+.pp-report__table tbody tr:hover td,
+.overall-dashboard__table tbody tr:hover td {
+  background-color: rgba(255,255,255,0.03) !important;
+}
+
+.production-report__table tbody tr:last-child td,
+.pp-report__table tbody tr:last-child td,
+.overall-dashboard__table tbody tr:last-child td {
+  border-bottom: none !important;
+}
+
+/* Pagination */
+.pp-report__pagination {
+  margin-top: 20px;
+  justify-content: flex-end;
+}
+.pp-report__pagination button {
+  background: var(--bg-sidebar) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition);
+}
+.pp-report__pagination button:hover:not(:disabled) {
+  background: var(--color-primary) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* ==========================================================================
+   Custom Select Override
+   ========================================================================== */
+.searchable-select__trigger {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--border-radius-sm) !important;
+  transition: var(--transition);
+}
+.searchable-select__trigger:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+.searchable-select__menu {
+  background: var(--bg-sidebar) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: var(--border-radius-sm);
+  box-shadow: var(--shadow-lg) !important;
+}
+.searchable-select__search {
+  background: var(--bg-main) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  border-radius: 4px;
+}
+.searchable-select__option:hover {
+  background-color: rgba(255,255,255,0.05) !important;
+}
+.searchable-select__option.is-selected {
+  background-color: rgba(99, 102, 241, 0.2) !important;
+  color: var(--color-primary) !important;
+}
+
+/* Typography & Contrast Overrides */
+.production-report__record-count,
+.pp-report__record-count {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
+.overall-dashboard__pie-value,
+.overall-dashboard__pie-label,
+.overall-dashboard__pie-legend li {
+  color: var(--text-secondary) !important;
+  font-weight: 500 !important;
+}
+
