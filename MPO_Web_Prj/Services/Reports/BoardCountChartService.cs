@@ -9,6 +9,8 @@ public class BoardCountChartService : IBoardCountChartService
 {
     private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
     private static readonly TimeOnly EndOfDay = new(23, 0);
+    private static readonly TimeSpan Shift1Start = TimeSpan.FromHours(6);
+    private static readonly TimeSpan Shift2Start = TimeSpan.FromHours(18);
 
     private readonly AppDbContext dbContext;
 
@@ -85,6 +87,7 @@ public class BoardCountChartService : IBoardCountChartService
     {
         var startDateTime = filter.StartDate?.ToDateTime(filter.StartTime ?? StartOfDay);
         var endDateTime = filter.EndDate?.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1);
+        var isShiftOnlyFilter = filter.Shift is 1 or 2 && !startDateTime.HasValue && !endDateTime.HasValue;
         var bucketType = ResolveBucketType(startDateTime, endDateTime);
 
         var query = dbContext.production_reports
@@ -103,7 +106,9 @@ public class BoardCountChartService : IBoardCountChartService
             query = query.Where(report => report.report_date < endDateTime.Value);
         }
 
-            var points = await query
+        query = ApplyShiftFilter(query, filter.Shift);
+
+        var points = await query
                 .Where(report => report.report_date != null)
                 .OrderBy(report => report.report_date)
                 .ThenBy(report => report.id)
@@ -116,7 +121,9 @@ public class BoardCountChartService : IBoardCountChartService
                 })
                 .ToListAsync(cancellationToken);
 
-        var bucketLabels = BuildBucketLabels(bucketType, startDateTime, endDateTime, points.Select(point => point.Time));
+        var bucketLabels = isShiftOnlyFilter
+            ? BuildShiftBucketLabels(filter.Shift)
+            : BuildBucketLabels(bucketType, startDateTime, endDateTime, points.Select(point => point.Time));
 
         return selectedLines.Select(lineName =>
         {
@@ -142,7 +149,7 @@ public class BoardCountChartService : IBoardCountChartService
                 LaneName = $"Lane {lane}",
                 Values = bucketLabels
                     .Select(bucket => linePoints
-                        .Where(point => point.Lane == lane && GetBucketStart(point.Time, bucketType) == bucket.Start)
+                        .Where(point => point.Lane == lane && GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
                         .Sum(point => point.BoardCount))
                     .ToList()
             }).ToList();
@@ -154,6 +161,22 @@ public class BoardCountChartService : IBoardCountChartService
                 Series = series
             };
         }).ToList();
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyShiftFilter(
+        IQueryable<MPO_Web_Prj.Models.production_report> query,
+        int shift)
+    {
+        return shift switch
+        {
+            1 => query.Where(report => report.report_date != null
+                && report.report_date.Value.TimeOfDay >= Shift1Start
+                && report.report_date.Value.TimeOfDay < Shift2Start),
+            2 => query.Where(report => report.report_date != null
+                && (report.report_date.Value.TimeOfDay >= Shift2Start
+                    || report.report_date.Value.TimeOfDay < Shift1Start)),
+            _ => query
+        };
     }
 
     private static BucketType ResolveBucketType(DateTime? startDateTime, DateTime? endDateTime)
@@ -221,6 +244,27 @@ public class BoardCountChartService : IBoardCountChartService
         };
     }
 
+    private static DateTime GetPointBucketStart(DateTime value, BucketType bucketType, bool useShiftHour)
+    {
+        return useShiftHour
+            ? new DateTime(2000, 1, 1, value.Hour, 0, 0)
+            : GetBucketStart(value, bucketType);
+    }
+
+    private static List<BucketLabel> BuildShiftBucketLabels(int shift)
+    {
+        var hours = shift == 2
+            ? Enumerable.Range(18, 6).Concat(Enumerable.Range(0, 6))
+            : Enumerable.Range(6, 12);
+
+        return hours
+            .Select(hour =>
+            {
+                var bucketStart = new DateTime(2000, 1, 1, hour, 0, 0);
+                return new BucketLabel(bucketStart, bucketStart.ToString("HH:00"));
+            })
+            .ToList();
+    }
     private static DateTime AddBucket(DateTime value, BucketType bucketType)
     {
         return bucketType switch
@@ -288,6 +332,7 @@ public class BoardCountChartService : IBoardCountChartService
     private static void NormalizeFilter(BoardCountChartFilter filter)
     {
         filter.Type = Math.Clamp(filter.Type, 1, 4);
+        filter.Shift = filter.Shift is 1 or 2 ? filter.Shift : 1;
         filter.Line1 = Normalize(filter.Line1);
         filter.Line2 = Normalize(filter.Line2);
         filter.Line3 = Normalize(filter.Line3);

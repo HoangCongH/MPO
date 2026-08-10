@@ -25,6 +25,8 @@ public class BoardCountChartFilter
 
     public string? Line4 { get; set; }
 
+    public int Shift { get; set; } = 1;
+
     public DateOnly? StartDate { get; set; }
 
     public TimeOnly? StartTime { get; set; }

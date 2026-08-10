@@ -42,19 +42,11 @@
         </div>
 
         <div class="pp-report__field">
-            <label asp-for="BoardProduced.Filter.StartDate">Start</label>
-            <div style="display: flex; gap: 8px;">
-                <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
-                <input asp-for="BoardProduced.Filter.StartTime" name="StartTime" type="time" step="1" asp-format="{0:HH:mm:ss}" required />
-            </div>
-        </div>
-
-        <div class="pp-report__field">
-            <label asp-for="BoardProduced.Filter.EndDate">End</label>
-            <div style="display: flex; gap: 8px;">
-                <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" required />
-                <input asp-for="BoardProduced.Filter.EndTime" name="EndTime" type="time" step="1" asp-format="{0:HH:mm:ss}" required />
-            </div>
+            <label asp-for="BoardProduced.Filter.Shift">Shift</label>
+            <select asp-for="BoardProduced.Filter.Shift" name="Shift" required>
+                <option value="1">Shift 1: 06:00 - 18:00</option>
+                <option value="2">Shift 2: 18:00 - 06:00</option>
+            </select>
         </div>
 
         <button class="pp-report__button" type="submit">Apply</button>
@@ -86,6 +78,16 @@
             <div class="pp-report__record-count">@Model.TopWorstFeeders.Count records</div>
             <div class="overall-dashboard__table-wrap">
                 <table class="overall-dashboard__table overall-dashboard__table--feeder">
+                    <colgroup>
+                        <col style="width: 18%;" />
+                        <col style="width: 8%;" />
+                        <col style="width: 12%;" />
+                        <col style="width: 7%;" />
+                        <col style="width: 21%;" />
+                        <col style="width: 12%;" />
+                        <col style="width: 13%;" />
+                        <col style="width: 9%;" />
+                    </colgroup>
                     <thead>
                         <tr>
                             <th>Feeder id</th>

@@ -9,6 +9,8 @@ public class OverallDashboardService : IOverallDashboardService
 {
     private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
     private static readonly TimeOnly EndOfDay = new(23, 0);
+    private static readonly TimeSpan Shift1Start = TimeSpan.FromHours(6);
+    private static readonly TimeSpan Shift2Start = TimeSpan.FromHours(18);
     private const int TopWorstLimit = 10;
 
     private readonly AppDbContext dbContext;
@@ -43,11 +45,13 @@ public class OverallDashboardService : IOverallDashboardService
                 dbContext.production_reports.AsNoTracking().Include(report => report.machine),
                 selectedLines,
                 startDateTime,
-                endDateTime);
+                endDateTime,
+                boardProduced.Filter.Shift);
 
             var errorStopTime = await BuildErrorStopTimeAsync(productionQuery, cancellationToken);
-            var topWorstFeeders = await BuildTopWorstFeedersAsync(selectedLines, startDateTime, endDateTime, cancellationToken);
-            var topWorstNozzles = await BuildTopWorstNozzlesAsync(selectedLines, startDateTime, endDateTime, cancellationToken);
+            var topWorstFeeders = await BuildTopWorstFeedersAsync(selectedLines, startDateTime, endDateTime, boardProduced.Filter.Shift, cancellationToken);
+            var topWorstNozzles = await BuildTopWorstNozzlesAsync(selectedLines, startDateTime, endDateTime, boardProduced.Filter.Shift, cancellationToken);
+
 
             return new OverallDashboardViewModel
             {
@@ -76,7 +80,8 @@ public class OverallDashboardService : IOverallDashboardService
         IQueryable<MPO_Web_Prj.Models.production_report> query,
         IReadOnlyList<string> selectedLines,
         DateTime? startDateTime,
-        DateTime? endDateTime)
+        DateTime? endDateTime,
+        int shift)
     {
         if (selectedLines.Count > 0)
         {
@@ -94,6 +99,7 @@ public class OverallDashboardService : IOverallDashboardService
         {
             query = query.Where(report => report.report_date < endDateTime.Value);
         }
+        query = ApplyProductionShiftFilter(query, shift);
 
         return query;
     }
@@ -135,6 +141,7 @@ public class OverallDashboardService : IOverallDashboardService
         IReadOnlyList<string> selectedLines,
         DateTime? startDateTime,
         DateTime? endDateTime,
+        int shift,
         CancellationToken cancellationToken)
     {
         var query = dbContext.feeder_logs
@@ -142,7 +149,7 @@ public class OverallDashboardService : IOverallDashboardService
             .Where(log => log.report != null)
             .AsQueryable();
 
-        query = ApplyFeederReportFilters(query, selectedLines, startDateTime, endDateTime);
+        query = ApplyFeederReportFilters(query, selectedLines, startDateTime, endDateTime, shift);
 
         var groupedRows = await query
             .GroupBy(log => new
@@ -187,6 +194,7 @@ public class OverallDashboardService : IOverallDashboardService
         IReadOnlyList<string> selectedLines,
         DateTime? startDateTime,
         DateTime? endDateTime,
+        int shift,
         CancellationToken cancellationToken)
     {
         var query = dbContext.nozzle_logs
@@ -194,7 +202,7 @@ public class OverallDashboardService : IOverallDashboardService
             .Where(log => log.report != null)
             .AsQueryable();
 
-        query = ApplyNozzleReportFilters(query, selectedLines, startDateTime, endDateTime);
+        query = ApplyNozzleReportFilters(query, selectedLines, startDateTime, endDateTime, shift);
 
         var groupedRows = await query
             .GroupBy(log => new
@@ -237,7 +245,8 @@ public class OverallDashboardService : IOverallDashboardService
         IQueryable<MPO_Web_Prj.Models.feeder_log> query,
         IReadOnlyList<string> selectedLines,
         DateTime? startDateTime,
-        DateTime? endDateTime)
+        DateTime? endDateTime,
+        int shift)
     {
         if (selectedLines.Count > 0)
         {
@@ -255,6 +264,8 @@ public class OverallDashboardService : IOverallDashboardService
         {
             query = query.Where(log => log.report!.report_date < endDateTime.Value);
         }
+
+        query = ApplyFeederShiftFilter(query, shift);
 
         return query;
     }
@@ -263,7 +274,8 @@ public class OverallDashboardService : IOverallDashboardService
         IQueryable<MPO_Web_Prj.Models.nozzle_log> query,
         IReadOnlyList<string> selectedLines,
         DateTime? startDateTime,
-        DateTime? endDateTime)
+        DateTime? endDateTime,
+        int shift)
     {
         if (selectedLines.Count > 0)
         {
@@ -282,7 +294,57 @@ public class OverallDashboardService : IOverallDashboardService
             query = query.Where(log => log.report!.report_date < endDateTime.Value);
         }
 
+        query = ApplyNozzleShiftFilter(query, shift);
+
         return query;
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyProductionShiftFilter(
+        IQueryable<MPO_Web_Prj.Models.production_report> query,
+        int shift)
+    {
+        return shift switch
+        {
+            1 => query.Where(report => report.report_date != null
+                && report.report_date.Value.TimeOfDay >= Shift1Start
+                && report.report_date.Value.TimeOfDay < Shift2Start),
+            2 => query.Where(report => report.report_date != null
+                && (report.report_date.Value.TimeOfDay >= Shift2Start
+                    || report.report_date.Value.TimeOfDay < Shift1Start)),
+            _ => query
+        };
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.feeder_log> ApplyFeederShiftFilter(
+        IQueryable<MPO_Web_Prj.Models.feeder_log> query,
+        int shift)
+    {
+        return shift switch
+        {
+            1 => query.Where(log => log.report!.report_date != null
+                && log.report.report_date.Value.TimeOfDay >= Shift1Start
+                && log.report.report_date.Value.TimeOfDay < Shift2Start),
+            2 => query.Where(log => log.report!.report_date != null
+                && (log.report.report_date.Value.TimeOfDay >= Shift2Start
+                    || log.report.report_date.Value.TimeOfDay < Shift1Start)),
+            _ => query
+        };
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.nozzle_log> ApplyNozzleShiftFilter(
+        IQueryable<MPO_Web_Prj.Models.nozzle_log> query,
+        int shift)
+    {
+        return shift switch
+        {
+            1 => query.Where(log => log.report!.report_date != null
+                && log.report.report_date.Value.TimeOfDay >= Shift1Start
+                && log.report.report_date.Value.TimeOfDay < Shift2Start),
+            2 => query.Where(log => log.report!.report_date != null
+                && (log.report.report_date.Value.TimeOfDay >= Shift2Start
+                    || log.report.report_date.Value.TimeOfDay < Shift1Start)),
+            _ => query
+        };
     }
 
     private static IReadOnlyList<string> GetSelectedLines(BoardCountChartFilter filter)

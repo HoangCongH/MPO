@@ -667,15 +667,21 @@ html.is-sidebar-collapsed .app-main,
 }
 
 .overall-dashboard__table--feeder td:nth-child(3) {
-  white-space: nowrap;
-  overflow-wrap: normal;
-  text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+}
+
+.overall-dashboard__table--feeder td:nth-child(1) {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
 }
 
 .overall-dashboard__table--feeder td:nth-child(5) {
-  white-space: normal;
-  overflow-wrap: anywhere;
-  text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-overflow: clip;
 }
 
 .overall-dashboard__table tbody tr:nth-child(even) td {
@@ -817,7 +823,7 @@ html.is-sidebar-collapsed .app-main,
 }
 
 .pp-report__table--wide {
-  min-width: 1885px;
+    min-width: 1950px;
 }
 
 .pp-report__table th {
