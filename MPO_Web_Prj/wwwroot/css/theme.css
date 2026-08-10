@@ -140,58 +140,20 @@ h1, h2, h3, h4, h5, h6,
    Layout: Header
    ========================================================================== */
 .top-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background-color: var(--bg-main);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  margin-bottom: 24px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 16px 24px;
+    background-color: var(--bg-main);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin-bottom: 24px;
 }
 
-.header-search {
-  position: relative;
-  width: 300px;
-}
-.header-search input {
-  width: 100%;
-  background: var(--bg-sidebar);
-  border: 1px solid var(--border-color);
-  border-radius: 9999px;
-  padding: 10px 16px 10px 40px;
-  color: var(--text-primary);
-  font-size: 14px;
-  transition: var(--transition);
-}
-.header-search input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
-}
-.header-search i {
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-secondary);
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.header-actions button {
-  background: transparent;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: var(--transition);
-}
-.header-actions button:hover {
-  color: var(--text-primary);
+html.is-sidebar-collapsed .top-header,
+.dashboard-shell.is-sidebar-collapsed .top-header {
+    padding-left: 72px;
 }
 .user-profile {
   display: flex;

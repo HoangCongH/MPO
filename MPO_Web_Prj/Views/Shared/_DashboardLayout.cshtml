@@ -83,13 +83,6 @@
                 <h1 style="font-size: 24px; margin: 0;">System Overview</h1>
                 <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 14px;">Monitor your production lines and reports.</p>
             </div>
-            
-            <div class="header-actions">
-                <div class="header-search">
-                    <i data-lucide="search" style="width: 18px;"></i>
-                    <input type="text" placeholder="Search for anything..." />
-                </div>
-            </div>
         </header>
 
         <div style="padding: 0 24px 24px 24px;">
@@ -158,6 +151,10 @@
                 const hasQuery = window.location.search.length > 1;
                 const requiredDateTimeFields = ['StartDate', 'StartTime', 'EndDate', 'EndTime'];
 
+                if (hasQuery) {
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+
                 requiredDateTimeFields.forEach(fieldName => {
                     const field = form.elements.namedItem(fieldName)
                         || form.elements.namedItem(`Filter.${fieldName}`);
@@ -194,6 +191,10 @@
                 }
 
                 form.addEventListener('submit', event => {
+                    if (event.submitter?.dataset.reportExport === 'true') {
+                        return;
+                    }
+
                     if (form.dataset.isSubmitting === 'true') {
                         event.preventDefault();
                         return;
