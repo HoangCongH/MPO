@@ -42,11 +42,23 @@
         </div>
 
         <div class="pp-report__field">
-            <label asp-for="BoardProduced.Filter.Shift">Shift</label>
-            <select asp-for="BoardProduced.Filter.Shift" name="Shift" required>
-                <option value="1">Shift 1: 06:00 - 18:00</option>
-                <option value="2">Shift 2: 18:00 - 06:00</option>
+            <label asp-for="BoardProduced.Filter.Shift">Time</label>
+            <select asp-for="BoardProduced.Filter.Shift" name="Shift" id="overallDashboardTime" required>
+                <option value="1">Shift 1: 6:00 - 18:00</option>
+                <option value="2">Shift 2: 18:00 - 6:00 next day</option>
+                <option value="3">All Day</option>
+                <option value="4">Last Hour</option>
             </select>
+        </div>
+
+        <div class="pp-report__field overall-dashboard-date-field">
+            <label asp-for="BoardProduced.Filter.StartDate">Start</label>
+            <input asp-for="BoardProduced.Filter.StartDate" name="StartDate" type="date" asp-format="{0:yyyy-MM-dd}" />
+        </div>
+
+        <div class="pp-report__field overall-dashboard-date-field">
+            <label asp-for="BoardProduced.Filter.EndDate">End</label>
+            <input asp-for="BoardProduced.Filter.EndDate" name="EndDate" type="date" asp-format="{0:yyyy-MM-dd}" />
         </div>
 
         <button class="pp-report__button" type="submit"><i data-lucide="filter" style="width: 16px; margin-right: 6px;"></i>Apply</button>
@@ -193,6 +205,26 @@
     const overallBoardCharts = @Html.Raw(JsonSerializer.Serialize(boardPayload));
     const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
     const overallDashboardColors = ['#6366F1', '#38BDF8', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
+
+    (() => {
+        const timeSelect = document.getElementById('overallDashboardTime');
+        const dateFields = document.querySelectorAll('.overall-dashboard-date-field input');
+
+        if (!timeSelect) {
+            return;
+        }
+
+        const syncDateFields = () => {
+            const isLastHour = timeSelect.value === '4';
+            dateFields.forEach(field => {
+                field.disabled = isLastHour;
+                field.required = !isLastHour;
+            });
+        };
+
+        timeSelect.addEventListener('change', syncDateFields);
+        syncDateFields();
+    })();
 
     overallBoardCharts.forEach((chart, index) => {
         const canvas = document.getElementById(`overallBoardProducedChart${index}`);

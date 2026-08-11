@@ -19,11 +19,13 @@ public class OverallDashboardController : Controller
     public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
         var hasSubmittedFilter = Request.Query.Count > 0;
-        var hasRequiredShift = filter.Shift is 1 or 2;
+        var hasRequiredTime = filter.Shift is >= 1 and <= 4;
+        var hasRequiredDate = filter.Shift == 4
+            || (filter.StartDate.HasValue && filter.EndDate.HasValue);
 
         // Overall Dashboard is a single-line view. Keep the Board Count Type
         // selector scoped to the Board Count page.
-        filter.IsApplied = hasSubmittedFilter && hasRequiredShift;
+        filter.IsApplied = hasSubmittedFilter && hasRequiredTime && hasRequiredDate;
         filter.Type = 1;
         filter.Line2 = null;
         filter.Line3 = null;
@@ -31,9 +33,13 @@ public class OverallDashboardController : Controller
 
         var viewModel = await overallDashboardService.GetDashboardAsync(filter, cancellationToken);
 
-        if (hasSubmittedFilter && !hasRequiredShift)
+        if (hasSubmittedFilter && !hasRequiredTime)
         {
-            viewModel.ErrorMessage = "Please select Shift 1 or Shift 2 before applying the filter.";
+            viewModel.ErrorMessage = "Please select a Time option before applying the filter.";
+        }
+        else if (hasSubmittedFilter && !hasRequiredDate)
+        {
+            viewModel.ErrorMessage = "Please select Start and End dates before applying the filter.";
         }
 
         return View(viewModel);

@@ -38,8 +38,9 @@ public class OverallDashboardService : IOverallDashboardService
         try
         {
             var selectedLines = GetSelectedLines(boardProduced.Filter);
-            var startDateTime = boardProduced.Filter.StartDate?.ToDateTime(boardProduced.Filter.StartTime ?? StartOfDay);
-            var endDateTime = boardProduced.Filter.EndDate?.ToDateTime(boardProduced.Filter.EndTime ?? EndOfDay).AddHours(1);
+            var dateRange = ResolveDateTimeRange(boardProduced.Filter);
+            var startDateTime = dateRange.Start;
+            var endDateTime = dateRange.End;
 
             var productionQuery = ApplyProductionFilters(
                 dbContext.production_reports.AsNoTracking().Include(report => report.machine),
@@ -76,6 +77,49 @@ public class OverallDashboardService : IOverallDashboardService
         }
     }
 
+    private static DateTimeRange ResolveDateTimeRange(BoardCountChartFilter filter)
+    {
+        if (filter.ResolvedStartDateTime.HasValue || filter.ResolvedEndDateTime.HasValue)
+        {
+            return new DateTimeRange(filter.ResolvedStartDateTime, filter.ResolvedEndDateTime);
+        }
+
+        if (filter.Shift == 4)
+        {
+            var now = DateTime.Now;
+            return new DateTimeRange(now.AddHours(-1), now);
+        }
+
+        if (!filter.StartDate.HasValue || !filter.EndDate.HasValue)
+        {
+            return new DateTimeRange(null, null);
+        }
+
+        var hasExplicitTime = filter.StartTime.HasValue || filter.EndTime.HasValue;
+        if (hasExplicitTime)
+        {
+            return new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(filter.StartTime ?? StartOfDay),
+                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1));
+        }
+
+        return filter.Shift switch
+        {
+            1 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift1Start)),
+                filter.EndDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift2Start))),
+            2 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift2Start)),
+                filter.EndDate.Value.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(Shift1Start))),
+            3 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(StartOfDay),
+                filter.EndDate.Value.AddDays(1).ToDateTime(StartOfDay)),
+            _ => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(StartOfDay),
+                filter.EndDate.Value.ToDateTime(EndOfDay).AddHours(1))
+        };
+    }
+
     private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyProductionFilters(
         IQueryable<MPO_Web_Prj.Models.production_report> query,
         IReadOnlyList<string> selectedLines,
@@ -99,7 +143,7 @@ public class OverallDashboardService : IOverallDashboardService
         {
             query = query.Where(report => report.report_date < endDateTime.Value);
         }
-        query = ApplyProductionShiftFilter(query, shift);
+        query = ApplyProductionTimeFilter(query, shift);
 
         return query;
     }
@@ -265,7 +309,7 @@ public class OverallDashboardService : IOverallDashboardService
             query = query.Where(log => log.report!.report_date < endDateTime.Value);
         }
 
-        query = ApplyFeederShiftFilter(query, shift);
+        query = ApplyFeederTimeFilter(query, shift);
 
         return query;
     }
@@ -294,12 +338,12 @@ public class OverallDashboardService : IOverallDashboardService
             query = query.Where(log => log.report!.report_date < endDateTime.Value);
         }
 
-        query = ApplyNozzleShiftFilter(query, shift);
+        query = ApplyNozzleTimeFilter(query, shift);
 
         return query;
     }
 
-    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyProductionShiftFilter(
+    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyProductionTimeFilter(
         IQueryable<MPO_Web_Prj.Models.production_report> query,
         int shift)
     {
@@ -311,11 +355,12 @@ public class OverallDashboardService : IOverallDashboardService
             2 => query.Where(report => report.report_date != null
                 && (report.report_date.Value.TimeOfDay >= Shift2Start
                     || report.report_date.Value.TimeOfDay < Shift1Start)),
+            3 or 4 => query,
             _ => query
         };
     }
 
-    private static IQueryable<MPO_Web_Prj.Models.feeder_log> ApplyFeederShiftFilter(
+    private static IQueryable<MPO_Web_Prj.Models.feeder_log> ApplyFeederTimeFilter(
         IQueryable<MPO_Web_Prj.Models.feeder_log> query,
         int shift)
     {
@@ -327,11 +372,12 @@ public class OverallDashboardService : IOverallDashboardService
             2 => query.Where(log => log.report!.report_date != null
                 && (log.report.report_date.Value.TimeOfDay >= Shift2Start
                     || log.report.report_date.Value.TimeOfDay < Shift1Start)),
+            3 or 4 => query,
             _ => query
         };
     }
 
-    private static IQueryable<MPO_Web_Prj.Models.nozzle_log> ApplyNozzleShiftFilter(
+    private static IQueryable<MPO_Web_Prj.Models.nozzle_log> ApplyNozzleTimeFilter(
         IQueryable<MPO_Web_Prj.Models.nozzle_log> query,
         int shift)
     {
@@ -343,6 +389,7 @@ public class OverallDashboardService : IOverallDashboardService
             2 => query.Where(log => log.report!.report_date != null
                 && (log.report.report_date.Value.TimeOfDay >= Shift2Start
                     || log.report.report_date.Value.TimeOfDay < Shift1Start)),
+            3 or 4 => query,
             _ => query
         };
     }
@@ -408,4 +455,6 @@ public class OverallDashboardService : IOverallDashboardService
 
         return false;
     }
+
+    private sealed record DateTimeRange(DateTime? Start, DateTime? End);
 }

@@ -34,6 +34,10 @@ public class BoardCountChartFilter
     public DateOnly? EndDate { get; set; }
 
     public TimeOnly? EndTime { get; set; }
+
+    public DateTime? ResolvedStartDateTime { get; set; }
+
+    public DateTime? ResolvedEndDateTime { get; set; }
 }
 
 public class BoardCountLineChart

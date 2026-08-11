@@ -52,12 +52,19 @@ public class BoardCountChartService : IBoardCountChartService
                 .Select(report => report.report_date)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            SetDefaultDateRange(filter, latestReportDate);
+            var hasExplicitDateRange = filter.StartDate.HasValue
+                || filter.EndDate.HasValue
+                || filter.StartTime.HasValue
+                || filter.EndTime.HasValue;
+            if (filter.Shift != 4)
+            {
+                SetDefaultDateRange(filter, latestReportDate);
+            }
 
             var selectedLines = GetSelectedLines(filter);
             var charts = selectedLines.Count == 0
                 ? []
-                : await BuildChartsAsync(filter, selectedLines, cancellationToken);
+                : await BuildChartsAsync(filter, selectedLines, !hasExplicitDateRange, cancellationToken);
 
             return new BoardCountChartViewModel
             {
@@ -83,18 +90,23 @@ public class BoardCountChartService : IBoardCountChartService
     private async Task<IReadOnlyList<BoardCountLineChart>> BuildChartsAsync(
         BoardCountChartFilter filter,
         IReadOnlyList<string> selectedLines,
+        bool useShiftBuckets,
         CancellationToken cancellationToken)
     {
-        var startDateTime = filter.StartDate?.ToDateTime(filter.StartTime ?? StartOfDay);
-        var endDateTime = filter.EndDate?.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1);
-        var isShiftOnlyFilter = filter.Shift is 1 or 2 && !startDateTime.HasValue && !endDateTime.HasValue;
+        var dateRange = ResolveDateTimeRange(filter);
+        var startDateTime = dateRange.Start;
+        var endDateTime = dateRange.End;
+        var isShiftOnlyFilter = filter.Shift is 1 or 2 && useShiftBuckets;
         var bucketType = ResolveBucketType(startDateTime, endDateTime);
+        var lastMachineIds = await GetLastMachineIdsByLineAsync(selectedLines, cancellationToken);
 
         var query = dbContext.production_reports
             .AsNoTracking()
             .Where(report => report.machine != null
                 && report.machine.line != null
-                && selectedLines.Contains(report.machine.line));
+                && selectedLines.Contains(report.machine.line)
+                && report.machine_id != null
+                && lastMachineIds.Contains(report.machine_id));
 
         if (startDateTime.HasValue)
         {
@@ -106,7 +118,7 @@ public class BoardCountChartService : IBoardCountChartService
             query = query.Where(report => report.report_date < endDateTime.Value);
         }
 
-        query = ApplyShiftFilter(query, filter.Shift);
+        query = ApplyTimeFilter(query, filter.Shift);
 
         var points = await query
                 .Where(report => report.report_date != null)
@@ -117,7 +129,7 @@ public class BoardCountChartService : IBoardCountChartService
                     LineName = report.machine!.line!,
                     Lane = report.machine.lane,
                     Time = report.report_date!.Value,
-                BoardCount = report.count_board ?? 0
+                    BoardCount = report.count_board ?? 0
                 })
                 .ToListAsync(cancellationToken);
 
@@ -163,7 +175,89 @@ public class BoardCountChartService : IBoardCountChartService
         }).ToList();
     }
 
-    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyShiftFilter(
+    private async Task<IReadOnlyList<string>> GetLastMachineIdsByLineAsync(
+        IReadOnlyList<string> selectedLines,
+        CancellationToken cancellationToken)
+    {
+        var machines = await dbContext.master_machines
+            .AsNoTracking()
+            .Where(machine => machine.line != null
+                && selectedLines.Contains(machine.line)
+                && machine.machine_name != null
+                && machine.machine_name != string.Empty)
+            .Select(machine => new
+            {
+                machine.id,
+                LineName = machine.line!,
+                MachineName = machine.machine_name!
+            })
+            .ToListAsync(cancellationToken);
+
+        return machines
+            .GroupBy(machine => machine.LineName)
+            .SelectMany(group =>
+            {
+                var lastMachineName = group.Max(machine => machine.MachineName);
+                return group
+                    .Where(machine => machine.MachineName == lastMachineName)
+                    .Select(machine => machine.id);
+            })
+            .ToList();
+    }
+
+    private static DateTimeRange ResolveDateTimeRange(BoardCountChartFilter filter)
+    {
+        DateTimeRange dateRange;
+
+        if (filter.Shift == 4)
+        {
+            var now = DateTime.Now;
+            dateRange = new DateTimeRange(now.AddHours(-1), now);
+            filter.ResolvedStartDateTime = dateRange.Start;
+            filter.ResolvedEndDateTime = dateRange.End;
+            return dateRange;
+        }
+
+        if (!filter.StartDate.HasValue || !filter.EndDate.HasValue)
+        {
+            dateRange = new DateTimeRange(null, null);
+            filter.ResolvedStartDateTime = dateRange.Start;
+            filter.ResolvedEndDateTime = dateRange.End;
+            return dateRange;
+        }
+
+        var hasExplicitTime = filter.StartTime.HasValue || filter.EndTime.HasValue;
+        if (hasExplicitTime)
+        {
+            dateRange = new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(filter.StartTime ?? StartOfDay),
+                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1));
+            filter.ResolvedStartDateTime = dateRange.Start;
+            filter.ResolvedEndDateTime = dateRange.End;
+            return dateRange;
+        }
+
+        dateRange = filter.Shift switch
+        {
+            1 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift1Start)),
+                filter.EndDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift2Start))),
+            2 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(TimeOnly.FromTimeSpan(Shift2Start)),
+                filter.EndDate.Value.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(Shift1Start))),
+            3 => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(StartOfDay),
+                filter.EndDate.Value.AddDays(1).ToDateTime(StartOfDay)),
+            _ => new DateTimeRange(
+                filter.StartDate.Value.ToDateTime(StartOfDay),
+                filter.EndDate.Value.ToDateTime(EndOfDay).AddHours(1))
+        };
+        filter.ResolvedStartDateTime = dateRange.Start;
+        filter.ResolvedEndDateTime = dateRange.End;
+        return dateRange;
+    }
+
+    private static IQueryable<MPO_Web_Prj.Models.production_report> ApplyTimeFilter(
         IQueryable<MPO_Web_Prj.Models.production_report> query,
         int shift)
     {
@@ -175,6 +269,7 @@ public class BoardCountChartService : IBoardCountChartService
             2 => query.Where(report => report.report_date != null
                 && (report.report_date.Value.TimeOfDay >= Shift2Start
                     || report.report_date.Value.TimeOfDay < Shift1Start)),
+            3 or 4 => query,
             _ => query
         };
     }
@@ -332,7 +427,7 @@ public class BoardCountChartService : IBoardCountChartService
     private static void NormalizeFilter(BoardCountChartFilter filter)
     {
         filter.Type = Math.Clamp(filter.Type, 1, 4);
-        filter.Shift = filter.Shift is 1 or 2 ? filter.Shift : 1;
+        filter.Shift = filter.Shift is >= 1 and <= 4 ? filter.Shift : 1;
         filter.Line1 = Normalize(filter.Line1);
         filter.Line2 = Normalize(filter.Line2);
         filter.Line3 = Normalize(filter.Line3);
@@ -376,6 +471,8 @@ public class BoardCountChartService : IBoardCountChartService
     }
 
     private sealed record BucketLabel(DateTime Start, string Label);
+
+    private sealed record DateTimeRange(DateTime? Start, DateTime? End);
 
     private static BoardCountChartViewModel CreateDatabaseErrorViewModel(BoardCountChartFilter filter, Exception exception)
     {
