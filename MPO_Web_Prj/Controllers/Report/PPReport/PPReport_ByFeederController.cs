@@ -16,9 +16,10 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
 
         [HttpGet("")]
         [HttpGet("Index")]
-        public async Task<IActionResult> Index([FromQuery] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
+        [HttpPost("Index")]
+        public async Task<IActionResult> Index([FromForm] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
         {
-            var hasSubmittedFilter = Request.Query.Count > 0;
+            var hasSubmittedFilter = HttpContext.Request.Method == HttpMethods.Post;
             filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
             if (hasSubmittedFilter && !filter.IsApplied)
@@ -29,8 +30,8 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
             return View("~/Views/Report/PPReport/PPReport_ByFeeder.cshtml", viewModel);
         }
 
-        [HttpGet("ExportExcel")]
-        public async Task<IActionResult> ExportExcel([FromQuery] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
+        [HttpPost("ExportExcel")]
+        public async Task<IActionResult> ExportExcel([FromForm] PickPlacementByFeederFilter filter, CancellationToken cancellationToken)
         {
             filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);

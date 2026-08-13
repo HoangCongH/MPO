@@ -35,7 +35,7 @@
           asp-controller="OverallDashboard"
           asp-action="Index"
           data-skip-filter-restore="true"
-          method="get">
+          method="post">
         <div class="pp-report__field overall-dashboard-line-field">
             <label asp-for="BoardProduced.Filter.Line1">Line</label>
             <select asp-for="BoardProduced.Filter.Line1" name="Line1" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line1))"></select>

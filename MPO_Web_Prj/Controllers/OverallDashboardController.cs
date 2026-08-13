@@ -16,9 +16,10 @@ public class OverallDashboardController : Controller
 
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
+    [HttpPost("Index")]
+    public async Task<IActionResult> Index([FromForm] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
-        var hasSubmittedFilter = Request.Query.Count > 0;
+        var hasSubmittedFilter = HttpContext.Request.Method == HttpMethods.Post;
         ReportFilterGuard.ApplyDefaultDateTimeRange(filter);
 
         // This dashboard uses its Time selector (Shift 1, Shift 2, All Day, Last Hour)

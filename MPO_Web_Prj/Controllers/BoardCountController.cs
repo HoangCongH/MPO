@@ -16,9 +16,10 @@ public class BoardCountController : Controller
 
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
+    [HttpPost("Index")]
+    public async Task<IActionResult> Index([FromForm] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
-        var hasSubmittedFilter = Request.Query.Count > 0;
+        var hasSubmittedFilter = HttpContext.Request.Method == HttpMethods.Post;
 
         // Board Count has Start/End time controls rather than a shift selector.
         filter.Shift = 3;

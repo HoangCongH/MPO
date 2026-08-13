@@ -14,9 +14,10 @@ namespace MPO_Web_Prj.Controllers.Report
 
         [HttpGet("")]
         [HttpGet("Index")]
-        public async Task<IActionResult> Index([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
+        [HttpPost("Index")]
+        public async Task<IActionResult> Index([FromForm] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
-            var hasSubmittedFilter = Request.Query.Count > 0;
+            var hasSubmittedFilter = HttpContext.Request.Method == HttpMethods.Post;
             filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
             if (hasSubmittedFilter && !filter.IsApplied)
@@ -27,8 +28,8 @@ namespace MPO_Web_Prj.Controllers.Report
             return View(viewModel);
         }
 
-        [HttpGet("ExportExcel")]
-        public async Task<IActionResult> ExportExcel([FromQuery] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
+        [HttpPost("ExportExcel")]
+        public async Task<IActionResult> ExportExcel([FromForm] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
             filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);

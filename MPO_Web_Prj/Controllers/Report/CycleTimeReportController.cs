@@ -16,9 +16,10 @@ public class CycleTimeReportController : Controller
 
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index([FromQuery] CycleTimeReportFilter filter, CancellationToken cancellationToken)
+    [HttpPost("Index")]
+    public async Task<IActionResult> Index([FromForm] CycleTimeReportFilter filter, CancellationToken cancellationToken)
     {
-        var hasSubmittedFilter = Request.Query.Count > 0;
+        var hasSubmittedFilter = HttpContext.Request.Method == HttpMethods.Post;
         filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
         if (hasSubmittedFilter && !filter.IsApplied)
@@ -29,8 +30,8 @@ public class CycleTimeReportController : Controller
         return View(viewModel);
     }
 
-    [HttpGet("ExportExcel")]
-    public async Task<IActionResult> ExportExcel([FromQuery] CycleTimeReportFilter filter, CancellationToken cancellationToken)
+    [HttpPost("ExportExcel")]
+    public async Task<IActionResult> ExportExcel([FromForm] CycleTimeReportFilter filter, CancellationToken cancellationToken)
     {
         filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
