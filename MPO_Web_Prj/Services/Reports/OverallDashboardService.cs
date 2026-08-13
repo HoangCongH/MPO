@@ -100,7 +100,7 @@ public class OverallDashboardService : IOverallDashboardService
         {
             return new DateTimeRange(
                 filter.StartDate.Value.ToDateTime(filter.StartTime ?? StartOfDay),
-                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1));
+                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay));
         }
 
         return filter.Shift switch

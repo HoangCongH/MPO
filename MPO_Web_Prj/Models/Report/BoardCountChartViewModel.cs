@@ -17,6 +17,9 @@ public class BoardCountChartFilter
 
     public int Type { get; set; } = 1;
 
+    // 0 represents the combined view of Lane 1 and Lane 2.
+    public int Lane { get; set; }
+
     public string? Line1 { get; set; }
 
     public string? Line2 { get; set; }
@@ -54,4 +57,7 @@ public class BoardCountLaneSeries
     public string LaneName { get; set; } = string.Empty;
 
     public IReadOnlyList<int> Values { get; set; } = [];
+
+    // Matches Values by bucket index and is used by the chart tooltip.
+    public IReadOnlyList<string> ModelNames { get; set; } = [];
 }

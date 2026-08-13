@@ -12,7 +12,8 @@
         series = chart.Series.Select(series => new
         {
             laneName = series.LaneName,
-            values = series.Values
+            values = series.Values,
+            modelNames = series.ModelNames
         })
     });
 }
@@ -31,6 +32,15 @@
                 <option value="2">2 Line</option>
                 <option value="3">3 Line</option>
                 <option value="4">4 Line</option>
+            </select>
+        </div>
+
+        <div class="pp-report__field">
+            <label asp-for="Filter.Lane">Lane</label>
+            <select asp-for="Filter.Lane" aria-label="Lane filter">
+                <option value="1">Lane 1</option>
+                <option value="2">Lane 2</option>
+                <option value="0">All Lanes</option>
             </select>
         </div>
 
@@ -95,6 +105,46 @@
     const boardCountCharts = @Html.Raw(JsonSerializer.Serialize(chartPayload));
     const boardCountColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
 
+    const createIntervalChartData = chart => {
+        const boundaryLabels = createBoundaryLabels(chart.labels);
+
+        return {
+            boundaryLabels,
+            datasets: chart.series.map((series, seriesIndex) => ({
+                label: series.laneName,
+                data: series.values.map((value, valueIndex) => ({
+                    x: valueIndex + 0.5,
+                    y: value
+                })),
+                backgroundColor: boardCountColors[seriesIndex % boardCountColors.length],
+                borderWidth: 0,
+                stack: 'board-count'
+            }))
+        };
+    };
+
+    const createBoundaryLabels = labels => {
+        if (!labels.length) {
+            return [];
+        }
+
+        return [...labels, getNextBoundaryLabel(labels)];
+    };
+
+    const getNextBoundaryLabel = labels => {
+        const lastLabel = labels[labels.length - 1] || '';
+        const hourMatch = lastLabel.match(/^(\d{2}):00$/);
+
+        if (!hourMatch) {
+            return '';
+        }
+
+        const nextHour = Number(hourMatch[1]) + 1;
+        return nextHour === 24
+            ? '24:00'
+            : `${String(nextHour % 24).padStart(2, '0')}:00`;
+    };
+
     document.querySelectorAll('.board-count-line-field').forEach(field => {
         const typeSelect = document.getElementById('boardCountType');
         const syncVisibility = () => {
@@ -113,17 +163,12 @@
             return;
         }
 
+        const intervalChart = createIntervalChartData(chart);
+
         new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: chart.labels,
-                datasets: chart.series.map((series, seriesIndex) => ({
-                    label: series.laneName,
-                    data: series.values,
-                    backgroundColor: boardCountColors[seriesIndex % boardCountColors.length],
-                    borderWidth: 0,
-                    stack: 'board-count'
-                }))
+                datasets: intervalChart.datasets
             },
             options: {
                 animation: false,
@@ -139,19 +184,40 @@
                             font: { size: 13 }
                         }
                     },
+                    tooltip: {
+                        callbacks: {
+                            title: context => {
+                                const bucketIndex = Math.floor(context[0].parsed.x);
+                                const start = intervalChart.boundaryLabels[bucketIndex] || '';
+                                const end = intervalChart.boundaryLabels[bucketIndex + 1] || '';
+                                return end ? `${start} - ${end}` : start;
+                            },
+                            beforeLabel: context => {
+                                const bucketIndex = Math.floor(context.parsed.x);
+                                return chart.series[context.datasetIndex]?.modelNames?.[bucketIndex] || '';
+                            },
+                            label: context => `Board Count: ${context.parsed.y}`
+                        }
+                    },
                     title: { display: false }
                 },
                 scales: {
                     x: {
+                        type: 'linear',
                         stacked: true,
-                        bounds: 'ticks',
+                        min: 0,
+                        max: Math.max(intervalChart.boundaryLabels.length - 1, 1),
                         ticks: {
                             autoSkip: true,
                             maxTicksLimit: 14,
                             maxRotation: 45,
-                            minRotation: 45
+                            minRotation: 45,
+                            stepSize: 1,
+                            callback: value => Number.isInteger(value)
+                                ? intervalChart.boundaryLabels[value] || ''
+                                : ''
                         },
-                        grid: { display: false }
+                        grid: { color: 'rgba(216,221,226,0.45)' }
                     },
                     y: {
                         stacked: true,
@@ -161,7 +227,8 @@
                 },
                 datasets: {
                     bar: {
-                        maxBarThickness: 24
+                        barThickness: 32,
+                        maxBarThickness: 36
                     }
                 }
             }

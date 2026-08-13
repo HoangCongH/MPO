@@ -206,6 +206,52 @@
     const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
     const overallDashboardColors = ['#6366F1', '#38BDF8', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
 
+    const createOverallIntervalChartData = chart => {
+        const boundaryLabels = createOverallBoundaryLabels(chart.labels);
+
+        return {
+            boundaryLabels,
+            datasets: chart.series.map((series, seriesIndex) => ({
+                label: series.laneName,
+                data: series.values.map((value, valueIndex) => ({
+                    x: valueIndex + 0.5,
+                    y: value
+                })),
+                backgroundColor: overallDashboardColors[seriesIndex % overallDashboardColors.length],
+                borderWidth: 0,
+                stack: 'board-produced'
+            }))
+        };
+    };
+
+    const createOverallBoundaryLabels = labels => {
+        if (!labels.length) {
+            return [];
+        }
+
+        return [...labels, getNextOverallBoundaryLabel(labels)];
+    };
+
+    const getNextOverallBoundaryLabel = labels => {
+        const lastLabel = labels[labels.length - 1] || '';
+        const hourMatch = lastLabel.match(/^(\d{2}):00$/);
+
+        if (!hourMatch) {
+            return '';
+        }
+
+        const nextHour = Number(hourMatch[1]) + 1;
+        return nextHour === 24
+            ? '24:00'
+            : `${String(nextHour % 24).padStart(2, '0')}:00`;
+    };
+
+    const getOverallBoardBarThickness = (canvas, bucketCount) => {
+        const chartWidth = canvas.parentElement?.clientWidth || canvas.clientWidth || 360;
+        const availableWidthPerBucket = chartWidth / Math.max(bucketCount, 1);
+        return Math.max(10, Math.min(30, Math.floor(availableWidthPerBucket * 0.55)));
+    };
+
     (() => {
         const timeSelect = document.getElementById('overallDashboardTime');
         const dateFields = document.querySelectorAll('.overall-dashboard-date-field input');
@@ -232,34 +278,63 @@
             return;
         }
 
+        const intervalChart = createOverallIntervalChartData(chart);
+        const bucketCount = Math.max(intervalChart.boundaryLabels.length - 1, 1);
+        const boardBarThickness = getOverallBoardBarThickness(canvas, bucketCount);
+
         new Chart(canvas, {
             type: 'bar',
             data: {
-                labels: chart.labels,
-                datasets: chart.series.map((series, seriesIndex) => ({
-                    label: series.laneName,
-                    data: series.values,
-                    backgroundColor: overallDashboardColors[seriesIndex % overallDashboardColors.length],
-                    borderWidth: 0,
-                    stack: 'board-produced'
-                }))
+                datasets: intervalChart.datasets
             },
             options: {
                 animation: true,
                 maintainAspectRatio: false,
                 normalized: true,
                 responsive: true,
+                layout: {
+                    padding: {
+                        left: 8,
+                        right: 8,
+                        bottom: 6
+                    }
+                },
                 plugins: {
                     legend: {
                         position: 'bottom',
                         labels: { boxWidth: 10, font: { size: 12 }, color: '#B6C2D9' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: context => {
+                                const bucketIndex = Math.floor(context[0].parsed.x);
+                                const start = intervalChart.boundaryLabels[bucketIndex] || '';
+                                const end = intervalChart.boundaryLabels[bucketIndex + 1] || '';
+                                return end ? `${start} - ${end}` : start;
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
+                        type: 'linear',
                         stacked: true,
-                        ticks: { autoSkip: true, maxTicksLimit: 12, maxRotation: 45, minRotation: 45 },
-                        grid: { display: false }
+                        min: 0,
+                        max: bucketCount,
+                        offset: false,
+                        ticks: {
+                            autoSkip: false,
+                            includeBounds: true,
+                            maxRotation: 60,
+                            minRotation: 60,
+                            stepSize: 1,
+                            color: '#B6C2D9',
+                            font: { size: 9 },
+                            callback: value => Number.isInteger(value)
+                                ? intervalChart.boundaryLabels[value] || ''
+                                : ''
+                        },
+                        grid: { color: 'rgba(255,255,255,0.07)' }
                     },
                     y: {
                         stacked: true,
@@ -269,7 +344,10 @@
                     }
                 },
                 datasets: {
-                    bar: { maxBarThickness: 22 }
+                    bar: {
+                        barThickness: boardBarThickness,
+                        maxBarThickness: 30
+                    }
                 }
             }
         });

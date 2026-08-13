@@ -19,6 +19,9 @@ public class BoardCountController : Controller
     public async Task<IActionResult> Index([FromQuery] BoardCountChartFilter filter, CancellationToken cancellationToken)
     {
         var hasSubmittedFilter = Request.Query.Count > 0;
+
+        // Board Count has Start/End time controls rather than a shift selector.
+        filter.Shift = 3;
         filter.IsApplied = ReportFilterGuard.ShouldApply(Request.Query.Count, filter);
         var viewModel = await boardCountChartService.GetChartAsync(filter, cancellationToken);
         if (hasSubmittedFilter && !filter.IsApplied)

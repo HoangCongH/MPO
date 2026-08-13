@@ -129,6 +129,7 @@ public class BoardCountChartService : IBoardCountChartService
                     LineName = report.machine!.line!,
                     Lane = report.machine.lane,
                     Time = report.report_date!.Value,
+                    ModelName = report.lot_name,
                     BoardCount = report.count_board ?? 0
                 })
                 .ToListAsync(cancellationToken);
@@ -140,31 +141,30 @@ public class BoardCountChartService : IBoardCountChartService
         return selectedLines.Select(lineName =>
         {
             var linePoints = points
-                .Where(point => point.LineName == lineName)
+                .Where(point => point.LineName == lineName
+                    && IsSelectedLane(point.Lane, filter.Lane))
                 .ToList();
 
-            var lanes = linePoints
-                .Select(point => point.Lane)
-                .Where(lane => lane.HasValue)
-                .Select(lane => lane!.Value)
-                .Distinct()
-                .OrderBy(lane => lane)
-                .ToList();
-
-            if (lanes.Count == 0)
+            var series = new[]
             {
-                lanes.Add(1);
-            }
-
-            var series = lanes.Select(lane => new BoardCountLaneSeries
-            {
-                LaneName = $"Lane {lane}",
+                new BoardCountLaneSeries
+                {
+                    LaneName = filter.Lane == 0 ? "All Lanes" : $"Lane {filter.Lane}",
                 Values = bucketLabels
                     .Select(bucket => linePoints
-                        .Where(point => point.Lane == lane && GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
+                        .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
                         .Sum(point => point.BoardCount))
-                    .ToList()
-            }).ToList();
+                    .ToList(),
+                    ModelNames = bucketLabels
+                        .Select(bucket => string.Join(", ", linePoints
+                            .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
+                            .Select(point => point.ModelName)
+                            .Where(modelName => !string.IsNullOrWhiteSpace(modelName))
+                            .Select(modelName => modelName!.Trim())
+                            .Distinct(StringComparer.OrdinalIgnoreCase)))
+                        .ToList()
+                }
+            };
 
             return new BoardCountLineChart
             {
@@ -231,7 +231,7 @@ public class BoardCountChartService : IBoardCountChartService
         {
             dateRange = new DateTimeRange(
                 filter.StartDate.Value.ToDateTime(filter.StartTime ?? StartOfDay),
-                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay).AddHours(1));
+                filter.EndDate.Value.ToDateTime(filter.EndTime ?? EndOfDay));
             filter.ResolvedStartDateTime = dateRange.Start;
             filter.ResolvedEndDateTime = dateRange.End;
             return dateRange;
@@ -415,6 +415,13 @@ public class BoardCountChartService : IBoardCountChartService
             .ToList();
     }
 
+    private static bool IsSelectedLane(short? lane, int selectedLane)
+    {
+        return selectedLane == 0
+            ? lane is 1 or 2
+            : lane == selectedLane;
+    }
+
     private static List<ReportSelectOption> BuildLineOptions(IEnumerable<string> lineNames)
     {
         return lineNames.Select(lineName => new ReportSelectOption
@@ -427,25 +434,17 @@ public class BoardCountChartService : IBoardCountChartService
     private static void NormalizeFilter(BoardCountChartFilter filter)
     {
         filter.Type = Math.Clamp(filter.Type, 1, 4);
+        filter.Lane = filter.Lane is 1 or 2 ? filter.Lane : 0;
         filter.Shift = filter.Shift is >= 1 and <= 4 ? filter.Shift : 1;
         filter.Line1 = Normalize(filter.Line1);
         filter.Line2 = Normalize(filter.Line2);
         filter.Line3 = Normalize(filter.Line3);
         filter.Line4 = Normalize(filter.Line4);
-        filter.StartTime = NormalizeHour(filter.StartTime);
-        filter.EndTime = NormalizeHour(filter.EndTime);
     }
 
     private static string? Normalize(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-    }
-
-    private static TimeOnly? NormalizeHour(TimeOnly? value)
-    {
-        return value.HasValue
-            ? new TimeOnly(value.Value.Hour, 0)
-            : null;
     }
 
     private static void SetDefaultDateRange(BoardCountChartFilter filter, DateTime? latestReportDate)
