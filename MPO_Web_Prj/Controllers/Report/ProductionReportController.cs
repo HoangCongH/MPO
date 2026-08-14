@@ -31,6 +31,7 @@ namespace MPO_Web_Prj.Controllers.Report
         [HttpPost("ExportExcel")]
         public async Task<IActionResult> ExportExcel([FromForm] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, CancellationToken cancellationToken)
         {
+            filter.ExportAll = true;
             filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
             var html = new System.Text.StringBuilder();

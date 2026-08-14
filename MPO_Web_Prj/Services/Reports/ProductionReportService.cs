@@ -174,7 +174,7 @@ public class ProductionReportService : IProductionReportService
             .ThenBy(row => row.GroupName);
 
         var totalRecords = await rowsQuery.CountAsync(cancellationToken);
-        var pagination = ReportPaging.Create(filter.Page, totalRecords);
+        var pagination = ReportPaging.Create(filter.Page, totalRecords, filter.ExportAll);
         filter.Page = pagination.Page;
 
         var rows = await rowsQuery
@@ -210,7 +210,7 @@ public class ProductionReportService : IProductionReportService
         return new ProductionReportViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

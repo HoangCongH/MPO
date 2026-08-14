@@ -103,7 +103,12 @@
 
 <script>
     const boardCountCharts = @Html.Raw(JsonSerializer.Serialize(chartPayload));
-    const boardCountColors = ['#1b6b87', '#f26f2d', '#7a9a01', '#7b3fb2', '#2e8b57', '#c04c7a'];
+    const boardCountColors = {
+        'Lane 1': '#22C55E',
+        'Lane 2': '#F97316',
+        'All Lanes': '#38BDF8'
+    };
+    const boardCountFallbackColors = ['#A78BFA', '#F472B6', '#FACC15'];
 
     const createIntervalChartData = chart => {
         const boundaryLabels = createBoundaryLabels(chart.labels);
@@ -116,7 +121,10 @@
                     x: valueIndex + 0.5,
                     y: value
                 })),
-                backgroundColor: boardCountColors[seriesIndex % boardCountColors.length],
+                backgroundColor: boardCountColors[series.laneName]
+                    || boardCountFallbackColors[seriesIndex % boardCountFallbackColors.length],
+                hoverBackgroundColor: boardCountColors[series.laneName]
+                    || boardCountFallbackColors[seriesIndex % boardCountFallbackColors.length],
                 borderWidth: 0,
                 stack: 'board-count'
             }))
@@ -143,6 +151,28 @@
         return nextHour === 24
             ? '24:00'
             : `${String(nextHour % 24).padStart(2, '0')}:00`;
+    };
+
+    const getBoundaryTickStep = (canvas, boundaryLabels) => {
+        const boundaryCount = Math.max(boundaryLabels.length - 1, 1);
+        const availableWidth = canvas.parentElement?.clientWidth || canvas.clientWidth || 360;
+        const maxVisibleLabels = Math.max(2, Math.floor(availableWidth / 48));
+
+        return Math.max(1, Math.ceil(boundaryCount / Math.max(maxVisibleLabels - 1, 1)));
+    };
+
+    const getBoundaryTickLabel = (value, canvas, boundaryLabels) => {
+        if (!Number.isInteger(value)) {
+            return '';
+        }
+
+        const lastBoundary = boundaryLabels.length - 1;
+        const tickStep = getBoundaryTickStep(canvas, boundaryLabels);
+        const isRequiredBoundary = value === 0 || value === lastBoundary;
+
+        return isRequiredBoundary || value % tickStep === 0
+            ? boundaryLabels[value] || ''
+            : '';
     };
 
     document.querySelectorAll('.board-count-line-field').forEach(field => {
@@ -208,14 +238,12 @@
                         min: 0,
                         max: Math.max(intervalChart.boundaryLabels.length - 1, 1),
                         ticks: {
-                            autoSkip: true,
-                            maxTicksLimit: 14,
-                            maxRotation: 45,
-                            minRotation: 45,
+                            autoSkip: false,
+                            align: 'inner',
+                            maxRotation: 60,
+                            minRotation: 60,
                             stepSize: 1,
-                            callback: value => Number.isInteger(value)
-                                ? intervalChart.boundaryLabels[value] || ''
-                                : ''
+                            callback: value => getBoundaryTickLabel(value, canvas, intervalChart.boundaryLabels)
                         },
                         grid: { color: 'rgba(216,221,226,0.45)' }
                     },

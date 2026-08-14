@@ -5,7 +5,7 @@
     Layout = "_DashboardLayout";
 }
 
-<section class="pp-report">
+<section class="pp-report pp-report--table">
     <h1 class="pp-report__title"><i data-lucide="cpu" style="margin-right: 8px;"></i>PICK-PLACEMENT REPORT BY FEEDER</h1>
 
     <form class="pp-report__filter"
@@ -68,7 +68,7 @@
     }
 
     <div class="pp-report__header-actions">
-        <div class="pp-report__record-count">@Model.Rows.Count records</div>
+        <div class="pp-report__record-count">@Model.Pagination.TotalRecords records</div>
         <partial name="~/Views/Shared/_ReportPagination.cshtml" model="Model.Pagination" />
     </div>
 

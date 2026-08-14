@@ -32,6 +32,8 @@ public class ProductionReportFilter
     public TimeOnly? EndTime { get; set; }
 
     public int Page { get; set; } = 1;
+
+    public bool ExportAll { get; set; }
 }
 
 public class ReportSelectOption

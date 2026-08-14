@@ -49,7 +49,7 @@ public class CycleTimeReportService : ICycleTimeReportService
                     LineOptions = lineOptions,
                     ModelOptions = BuildOptions([]),
                     HasAppliedFilter = false,
-                    Pagination = ReportPaging.Create(filter.Page, 0),
+                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                     Rows = []
                 };
             }
@@ -184,7 +184,7 @@ public class CycleTimeReportService : ICycleTimeReportService
                 .Where(row => row.CycleTime1.HasValue || row.CycleTime2.HasValue || row.CycleTime3.HasValue)
                 .ToList();
 
-            var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+            var pagination = ReportPaging.Create(filter.Page, allRows.Count, filter.ExportAll);
             filter.Page = pagination.Page;
             var rows = allRows
                 .Skip(pagination.Skip)
@@ -221,7 +221,7 @@ public class CycleTimeReportService : ICycleTimeReportService
         {
             Filter = filter,
             HasAppliedFilter = filter.IsApplied,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

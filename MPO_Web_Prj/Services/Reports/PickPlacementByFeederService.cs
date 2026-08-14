@@ -51,7 +51,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     PartOptions = DefaultOptions(),
                     FeederIdOptions = DefaultOptions(),
                     FeederSlotOptions = DefaultOptions(),
-                    Pagination = ReportPaging.Create(filter.Page, 0),
+                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                     Rows = []
                 };
             }
@@ -90,7 +90,8 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
             var query = dbContext.feeder_logs
                 .AsNoTracking()
-                .Where(log => log.report != null)
+                // A report timestamp is required for both the date range and stable pagination.
+                .Where(log => log.report != null && log.report.report_date != null)
                 .AsQueryable();
 
             query = ApplyMachineFilters(query, filter);
@@ -124,11 +125,19 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
             });
 
             var totalRecords = await groupedQuery.CountAsync(cancellationToken);
-            var pagination = ReportPaging.Create(filter.Page, totalRecords);
+            var pagination = ReportPaging.Create(filter.Page, totalRecords, filter.ExportAll);
             filter.Page = pagination.Page;
 
             var reportRows = await groupedQuery
                 .OrderByDescending(g => g.Max(log => log.report!.report_date))
+                // Make offset pagination deterministic when groups share the same latest report time.
+                .ThenBy(g => g.Key.LineName)
+                .ThenBy(g => g.Key.MachineName)
+                .ThenBy(g => g.Key.Stage)
+                .ThenBy(g => g.Key.PartName)
+                .ThenBy(g => g.Key.FeederId)
+                .ThenBy(g => g.Key.FeederAdd)
+                .ThenBy(g => g.Key.FeederSubAdd)
                 .Skip(pagination.Skip)
                 .Take(pagination.PageSize)
                 .Select(g => new
@@ -166,7 +175,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     PartName = row.PartName,
                     LineName = row.LineName,
                     MachineName = row.MachineName,
-                    Stage = row.Stage,
+                    Stage = row.Stage ?? string.Empty,
                     FeederId = row.FeederId,
                     FeederTable = GetFeederTable(row.FeederAdd),
                     FeederSlot = GetFeederSlot(row.FeederAdd),
@@ -383,7 +392,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         return new PickPlacementByFeederViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

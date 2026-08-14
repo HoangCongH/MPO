@@ -50,7 +50,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
                 MachineNameOptions = machineNameOptions,
                 StageOptions = stageOptions,
                 PartOptions = DefaultOptions(),
-                Pagination = ReportPaging.Create(filter.Page, 0),
+                Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                 Rows = []
             };
         }
@@ -159,7 +159,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
             })
             .ToList();
 
-        var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+        var pagination = ReportPaging.Create(filter.Page, allRows.Count, filter.ExportAll);
         filter.Page = pagination.Page;
         var rows = allRows
             .Skip(pagination.Skip)
@@ -267,7 +267,7 @@ public class PickPlacementByPartService : IPickPlacementByPartService
         return new PickPlacementByPartViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

@@ -33,6 +33,7 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
         [HttpPost("ExportExcel")]
         public async Task<IActionResult> ExportExcel([FromForm] PickPlacementByNozzleFilter filter, CancellationToken cancellationToken)
         {
+            filter.ExportAll = true;
             filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
             var html = new System.Text.StringBuilder();

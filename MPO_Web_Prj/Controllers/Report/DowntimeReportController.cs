@@ -33,6 +33,7 @@ public class DowntimeReportController : Controller
     [HttpPost("ExportExcel")]
     public async Task<IActionResult> ExportExcel([FromForm] DowntimeReportFilter filter, CancellationToken cancellationToken)
     {
+        filter.ExportAll = true;
         filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
         var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
         var html = new System.Text.StringBuilder();

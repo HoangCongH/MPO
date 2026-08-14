@@ -25,7 +25,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connStr, npgsqlOptions =>
     {
         npgsqlOptions.EnableRetryOnFailure(3, TimeSpan.FromSeconds(2), null);
-        npgsqlOptions.CommandTimeout(30);
+        npgsqlOptions.CommandTimeout(600);
     }));
 builder.Services.AddScoped<IProductionReportService, ProductionReportService>();
 builder.Services.AddScoped<IPickPlacementByPartService, PickPlacementByPartService>();

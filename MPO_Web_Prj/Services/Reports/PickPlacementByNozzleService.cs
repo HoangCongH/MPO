@@ -53,7 +53,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                     StageOptions = stageOptions,
                     PartOptions = DefaultOptions(),
                     NozzleSlotOptions = DefaultOptions(),
-                    Pagination = ReportPaging.Create(filter.Page, 0),
+                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                     Rows = []
                 };
             }
@@ -110,7 +110,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
             });
 
             var totalRecords = await groupedQuery.CountAsync(cancellationToken);
-            var pagination = ReportPaging.Create(filter.Page, totalRecords);
+            var pagination = ReportPaging.Create(filter.Page, totalRecords, filter.ExportAll);
             filter.Page = pagination.Page;
 
             var reportRows = await groupedQuery
@@ -150,7 +150,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                     PartName = row.PartName,
                     LineName = row.LineName,
                     MachineName = row.MachineName,
-                    Stage = row.Stage,
+                    Stage = row.Stage ?? string.Empty,
                     NozzleSlot = row.NozzleSlot?.ToString() ?? string.Empty,
                     NozzleChangerSlot = row.NozzleChangerSlot,
                     PickupCount = row.PickupCount,
@@ -326,7 +326,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
         return new PickPlacementByNozzleViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

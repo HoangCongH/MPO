@@ -36,7 +36,7 @@ public class DowntimeReportService : IDowntimeReportService
                 {
                     Filter = filter,
                     LineOptions = lineOptions,
-                    Pagination = ReportPaging.Create(filter.Page, 0),
+                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                     Rows = []
                 };
             }
@@ -109,7 +109,7 @@ public class DowntimeReportService : IDowntimeReportService
                 .ThenBy(row => row.LineName)
                 .ToListAsync(cancellationToken);
 
-            var pagination = ReportPaging.Create(filter.Page, rows.Count);
+            var pagination = ReportPaging.Create(filter.Page, rows.Count, filter.ExportAll);
             filter.Page = pagination.Page;
             rows = rows
                 .Skip(pagination.Skip)
@@ -165,7 +165,7 @@ public class DowntimeReportService : IDowntimeReportService
         return new DowntimeReportViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }

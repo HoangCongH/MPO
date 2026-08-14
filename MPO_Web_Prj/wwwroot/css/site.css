@@ -390,10 +390,16 @@ html.is-sidebar-collapsed .app-sidebar-toggle,
 .app-main {
   height: 100dvh;
   min-width: 0;
-  overflow: auto;
+  overflow: hidden;
   padding: var(--app-main-padding);
   scrollbar-gutter: stable;
   transition: padding-left .26s ease;
+}
+
+.app-main__content {
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
 }
 
 html.is-sidebar-collapsed .app-main,
@@ -779,6 +785,20 @@ html.is-sidebar-collapsed .app-main,
   overflow: auto;
   scrollbar-gutter: stable;
   width: 100%;
+}
+
+/* Keep filter controls visible while the table itself owns vertical and horizontal scrolling. */
+.pp-report--table {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pp-report--table .pp-report__table-wrap {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
 }
 
 .pp-report__record-count {

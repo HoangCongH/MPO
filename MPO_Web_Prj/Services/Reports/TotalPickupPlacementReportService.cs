@@ -36,7 +36,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 {
                     Filter = filter,
                     LineOptions = lineOptions,
-                    Pagination = ReportPaging.Create(filter.Page, 0),
+                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
                     Rows = []
                 };
             }
@@ -111,7 +111,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 })
                 .ToList();
 
-            var pagination = ReportPaging.Create(filter.Page, allRows.Count);
+            var pagination = ReportPaging.Create(filter.Page, allRows.Count, filter.ExportAll);
             filter.Page = pagination.Page;
             var rows = allRows
                 .Skip(pagination.Skip)
@@ -177,7 +177,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
         return new TotalPickupPlacementReportViewModel
         {
             Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0),
+            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
             ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
         };
     }
