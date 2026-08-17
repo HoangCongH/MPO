@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MPO_Web_Prj.Data;
@@ -53,7 +54,20 @@ app.Use(async (context, next) =>
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(context =>
+        {
+            var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+            app.Logger.LogError(
+                exception,
+                "Unhandled request failure. Trace identifier: {TraceIdentifier}",
+                context.TraceIdentifier);
+
+            context.Response.Redirect("/Home/Error");
+            return Task.CompletedTask;
+        });
+    });
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
