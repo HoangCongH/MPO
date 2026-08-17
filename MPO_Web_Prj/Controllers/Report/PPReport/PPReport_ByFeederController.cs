@@ -71,6 +71,39 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
                 $"PickPlacementByFeeder_{DateTime.Now:yyyyMMddHHmmss}.xls");
         }
 
+        [HttpPost("Batch")]
+        public async Task<IActionResult> Batch(
+            [FromForm] PickPlacementByFeederFilter filter,
+            [FromForm] int offset,
+            CancellationToken cancellationToken)
+        {
+            filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
+            if (!filter.IsApplied)
+            {
+                return BadRequest(new { error = ReportFilterGuard.RequiredDateTimeMessage });
+            }
+
+            var batch = await reportService.GetBatchAsync(filter, offset, 200, cancellationToken);
+            return Json(batch);
+        }
+
+        [HttpPost("Options")]
+        public async Task<IActionResult> Options(
+            [FromForm] string field,
+            [FromForm] string? search,
+            [FromForm] PickPlacementByFeederFilter filter,
+            CancellationToken cancellationToken)
+        {
+            if (field is not ("partName" or "feederId" or "feederSlot"))
+            {
+                return BadRequest(new { error = "Unknown filter field." });
+            }
+
+            filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
+            var options = await reportService.GetFilterOptionsAsync(field, filter, search, cancellationToken);
+            return Json(options);
+        }
+
         private static string Encode(string value)
         {
             return System.Net.WebUtility.HtmlEncode(value);

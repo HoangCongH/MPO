@@ -90,3 +90,35 @@ public class PickPlacementByFeederRow
 
     public bool HasPickupWithoutPlacement => PickupCount > 0 && PlacementCount == 0;
 }
+
+public class PickPlacementByFeederBatch
+{
+    public IReadOnlyList<PickPlacementByFeederRow> Rows { get; init; } = [];
+
+    public int TotalRecords { get; init; }
+
+    public int NextOffset { get; init; }
+
+    public bool HasMore { get; init; }
+}
+
+// Projection used by the window-count SQL query. It is not an EF entity.
+public sealed class PickPlacementByFeederSqlRow
+{
+    public string PartName { get; init; } = string.Empty;
+    public string LineName { get; init; } = string.Empty;
+    public string MachineName { get; init; } = string.Empty;
+    public string Stage { get; init; } = string.Empty;
+    public string FeederId { get; init; } = string.Empty;
+    public string FeederAdd { get; init; } = string.Empty;
+    public short? FeederSubAdd { get; init; }
+    public int PickupCount { get; init; }
+    public int PlacementCount { get; init; }
+    public int PickupMiss { get; init; }
+    public int RecogMiss { get; init; }
+    public int HeightMiss { get; init; }
+    public int DropMiss { get; init; }
+    public int MountMiss { get; init; }
+    public int TransferMiss { get; init; }
+    public long TotalRecords { get; init; }
+}

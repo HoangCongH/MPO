@@ -66,10 +66,9 @@
 
     <div class="pp-report__header-actions">
         <div class="pp-report__record-count">@Model.Pagination.TotalRecords records</div>
-        <partial name="~/Views/Shared/_ReportPagination.cshtml" model="Model.Pagination" />
     </div>
 
-    <div class="pp-report__table-wrap">
+    <div class="pp-report__table-wrap" data-report-batch-url="@Url.Action("Batch", "PPReport_ByNozzle")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-columns="lineName,machineName,stage,partName,nozzleSlot,nozzleChangerSlot,pickupCount,placementCount,pickupMiss,recogMiss,heightMiss,dropMiss,mountMiss,transferMiss,scrapRatio">
         <table class="pp-report__table pp-report__table--wide">
             <colgroup>
                 <col style="width: 145px;" />
@@ -107,7 +106,7 @@
                     <th>Scrap<br />ratio</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody data-report-batch-rows>
                 @foreach (var row in Model.Rows)
                 {
                     <tr>

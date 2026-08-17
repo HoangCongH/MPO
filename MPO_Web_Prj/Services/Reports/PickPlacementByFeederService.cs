@@ -2,11 +2,14 @@ using Microsoft.EntityFrameworkCore;
 using MPO_Web_Prj.Data;
 using MPO_Web_Prj.Models.Report;
 using Npgsql;
+using NpgsqlTypes;
 
 namespace MPO_Web_Prj.Services.Reports;
 
 public class PickPlacementByFeederService : IPickPlacementByFeederService
 {
+    private const int InitialBatchSize = 200;
+    private const int OptionLimit = 50;
     private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
     private static readonly TimeOnly EndOfDay = new(23, 59, 59);
 
@@ -55,110 +58,18 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     Rows = []
                 };
             }
-
-            var latestReportDate = await dbContext.feeder_logs
-                .AsNoTracking()
-                .Where(log => log.report != null && log.report.report_date != null)
-                .OrderByDescending(log => log.report!.report_date)
-                .Select(log => log.report!.report_date)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            SetDefaultDateRange(filter, latestReportDate);
-
-            var partOptions = await BuildOptionsAsync(
-                ApplyMachineFilters(dbContext.feeder_logs.AsNoTracking(), filter)
-                    .Where(log => log.part_name != null && log.part_name != string.Empty)
-                    .Select(log => log.part_name!),
-                cancellationToken
-                );
-            //var partOptions = await BuildOptionsAsync(
-            //    ApplyLineFilter(dbContext.feeder_logs.AsNoTracking(), filter.LineName)
-            //        .Where(log => log.part_name != null && log.part_name != string.Empty)
-            //        .Select(log => log.part_name!),
-            //    cancellationToken);
-
-            var feederIdOptions = await BuildOptionsAsync(
-                ApplyLineFilter(dbContext.feeder_logs.AsNoTracking(), filter.LineName)
-                    .Where(log => log.blk_serial != null && log.blk_serial != string.Empty)
-                    .Select(log => log.blk_serial!),
+            var batch = await GetBatchAsync(
+                filter,
+                0,
+                filter.ExportAll ? int.MaxValue : InitialBatchSize,
                 cancellationToken);
 
-            var feederSlotOptions = await BuildFeederSlotOptionsAsync(
-                ApplyLineFilter(dbContext.feeder_logs.AsNoTracking(), filter.LineName)
-                    .Where(log => log.f_add != null && log.f_add != string.Empty),
-                cancellationToken);
-
-            var query = dbContext.feeder_logs
-                .AsNoTracking()
-                // A report timestamp is required for both the date range and stable pagination.
-                .Where(log => log.report != null && log.report.report_date != null)
-                .AsQueryable();
-
-            query = ApplyMachineFilters(query, filter);
-
-            if (!string.IsNullOrWhiteSpace(filter.PartName))
+            var pagination = new ReportPagination
             {
-                query = query.Where(log => log.part_name == filter.PartName);
-            }
-
-            if (!string.IsNullOrWhiteSpace(filter.FeederId))
-            {
-                query = query.Where(log => log.blk_serial == filter.FeederId);
-            }
-
-            if (!string.IsNullOrWhiteSpace(filter.FeederSlot))
-            {
-                query = query.Where(log => log.f_add == filter.FeederSlot);
-            }
-
-            query = ApplyDateFilter(query, filter);
-
-            var groupedQuery = query.GroupBy(log => new
-            {
-                PartName = log.part_name,
-                LineName = log.report!.machine != null ? log.report.machine.line : null,
-                MachineName = log.report!.machine != null ? log.report.machine.machine_name : null,
-                Stage = log.report!.machine != null ? log.report.machine.stage : null,
-                FeederId = log.blk_serial,
-                FeederAdd = log.f_add,
-                FeederSubAdd = log.fs_add
-            });
-
-            var totalRecords = await groupedQuery.CountAsync(cancellationToken);
-            var pagination = ReportPaging.Create(filter.Page, totalRecords, filter.ExportAll);
-            filter.Page = pagination.Page;
-
-            var reportRows = await groupedQuery
-                .OrderByDescending(g => g.Max(log => log.report!.report_date))
-                // Make offset pagination deterministic when groups share the same latest report time.
-                .ThenBy(g => g.Key.LineName)
-                .ThenBy(g => g.Key.MachineName)
-                .ThenBy(g => g.Key.Stage)
-                .ThenBy(g => g.Key.PartName)
-                .ThenBy(g => g.Key.FeederId)
-                .ThenBy(g => g.Key.FeederAdd)
-                .ThenBy(g => g.Key.FeederSubAdd)
-                .Skip(pagination.Skip)
-                .Take(pagination.PageSize)
-                .Select(g => new
-                {
-                    PartName = g.Key.PartName ?? string.Empty,
-                    LineName = g.Key.LineName ?? string.Empty,
-                    MachineName = g.Key.MachineName ?? string.Empty,
-                    Stage = g.Key.Stage != null ? g.Key.Stage.ToString() : string.Empty,
-                    FeederId = g.Key.FeederId ?? string.Empty,
-                    FeederAdd = g.Key.FeederAdd ?? string.Empty,
-                    FeederSubAdd = g.Key.FeederSubAdd,
-                    PickupCount = g.Sum(log => log.f_pickup_qty ?? 0),
-                    PlacementCount = g.Sum(log => log.f_mount_qty ?? 0),
-                    PickupMiss = g.Sum(log => log.f_p_miss_qty ?? 0),
-                    RecogMiss = g.Sum(log => log.f_r_miss_qty ?? 0),
-                    HeightMiss = g.Sum(log => log.f_h_miss_qty ?? 0),
-                    DropMiss = g.Sum(log => log.f_d_miss_qty ?? 0),
-                    MountMiss = g.Sum(log => log.f_m_miss_qty ?? 0),
-                    TransferMiss = g.Sum(log => log.f_trs_miss_qty ?? 0)
-                })
-                .ToListAsync(cancellationToken);
+                Page = 1,
+                PageSize = filter.ExportAll ? Math.Max(batch.TotalRecords, 1) : InitialBatchSize,
+                TotalRecords = batch.TotalRecords
+            };
 
             return new PickPlacementByFeederViewModel
             {
@@ -166,30 +77,12 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                 LineOptions = lineOptions,
                 MachineNameOptions = machineNameOptions,
                 StageOptions = stageOptions,
-                PartOptions = partOptions,
-                FeederIdOptions = feederIdOptions,
-                FeederSlotOptions = feederSlotOptions,
+                // These three high-cardinality lists are requested by the dropdown only when opened.
+                PartOptions = SelectedOption(filter.PartName),
+                FeederIdOptions = SelectedOption(filter.FeederId),
+                FeederSlotOptions = SelectedOption(filter.FeederSlot),
                 Pagination = pagination,
-                Rows = reportRows.Select(row => new PickPlacementByFeederRow
-                {
-                    PartName = row.PartName,
-                    LineName = row.LineName,
-                    MachineName = row.MachineName,
-                    Stage = row.Stage ?? string.Empty,
-                    FeederId = row.FeederId,
-                    FeederTable = GetFeederTable(row.FeederAdd),
-                    FeederSlot = GetFeederSlot(row.FeederAdd),
-                    Side = row.FeederSubAdd?.ToString() ?? string.Empty,
-                    PickupCount = row.PickupCount,
-                    PlacementCount = row.PlacementCount,
-                    PickupMiss = row.PickupMiss,
-                    RecogMiss = row.RecogMiss,
-                    HeightMiss = row.HeightMiss,
-                    DropMiss = row.DropMiss,
-                    MountMiss = row.MountMiss,
-                    TransferMiss = row.TransferMiss,
-                    ScrapRatio = CalculateScrapRatio(row.PickupCount, row.PlacementCount)
-                }).ToList()
+                Rows = batch.Rows
             };
         }
         catch (NpgsqlException ex)
@@ -205,6 +98,192 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
             return CreateDatabaseErrorViewModel(filter, ex);
         }
     }
+
+    public async Task<PickPlacementByFeederBatch> GetBatchAsync(
+        PickPlacementByFeederFilter filter,
+        int offset,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        NormalizeFilter(filter);
+        var rows = await ExecuteBatchQueryAsync(filter, Math.Max(offset, 0), Math.Clamp(take, 1, int.MaxValue), cancellationToken);
+        var totalRecords = rows.Count == 0 ? 0 : checked((int)rows[0].TotalRecords);
+        var mappedRows = rows.Select(MapRow).ToList();
+
+        return new PickPlacementByFeederBatch
+        {
+            Rows = mappedRows,
+            TotalRecords = totalRecords,
+            NextOffset = offset + mappedRows.Count,
+            HasMore = offset + mappedRows.Count < totalRecords
+        };
+    }
+
+    public async Task<IReadOnlyList<ReportSelectOption>> GetFilterOptionsAsync(
+        string field,
+        PickPlacementByFeederFilter filter,
+        string? search,
+        CancellationToken cancellationToken)
+    {
+        NormalizeFilter(filter);
+        var query = ApplyDateFilter(ApplyMachineFilters(dbContext.feeder_logs.AsNoTracking(), filter), filter);
+        var normalizedSearch = Normalize(search);
+        IQueryable<string> values = field switch
+        {
+            "partName" => query.Where(log => log.part_name != null && log.part_name != string.Empty).Select(log => log.part_name!),
+            "feederId" => query.Where(log => log.blk_serial != null && log.blk_serial != string.Empty).Select(log => log.blk_serial!),
+            "feederSlot" => query.Where(log => log.f_add != null && log.f_add != string.Empty).Select(log => log.f_add!),
+            _ => throw new ArgumentOutOfRangeException(nameof(field), "Unknown feeder option field.")
+        };
+
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            values = values.Where(value => EF.Functions.ILike(value, $"%{normalizedSearch}%"));
+        }
+
+        var options = (await values
+            .Distinct()
+            .OrderBy(value => value)
+            .Take(OptionLimit)
+            .Select(value => new ReportSelectOption { Value = value, Text = value })
+            .ToListAsync(cancellationToken))
+            .ToList();
+
+        var selectedValue = field switch
+        {
+            "partName" => filter.PartName,
+            "feederId" => filter.FeederId,
+            _ => filter.FeederSlot
+        };
+
+        if (!string.IsNullOrWhiteSpace(selectedValue) && options.All(option => option.Value != selectedValue))
+        {
+            options.Insert(0, new ReportSelectOption { Value = selectedValue, Text = selectedValue });
+        }
+
+        options.Insert(0, new ReportSelectOption { Value = string.Empty, Text = "All" });
+        return options;
+    }
+
+    private async Task<List<PickPlacementByFeederSqlRow>> ExecuteBatchQueryAsync(
+        PickPlacementByFeederFilter filter,
+        int offset,
+        int take,
+        CancellationToken cancellationToken)
+    {
+        var startAt = filter.StartDate?.ToDateTime(filter.StartTime ?? StartOfDay);
+        DateTime? endAt = null;
+
+        if (filter.EndDate.HasValue)
+        {
+            endAt = filter.EndTime.HasValue && filter.EndTime.Value != EndOfDay
+                ? filter.EndDate.Value.ToDateTime(filter.EndTime.Value)
+                : filter.EndDate.Value.AddDays(1).ToDateTime(StartOfDay);
+        }
+
+        short? stage = short.TryParse(filter.Stage, out var parsedStage) ? parsedStage : null;
+        const string sql = """
+            WITH grouped AS (
+                SELECT
+                    COALESCE(fl.part_name, '') AS "PartName",
+                    COALESCE(mm.line, '') AS "LineName",
+                    COALESCE(mm.machine_name, '') AS "MachineName",
+                    COALESCE(mm.stage::text, '') AS "Stage",
+                    COALESCE(fl.blk_serial, '') AS "FeederId",
+                    COALESCE(fl.f_add, '') AS "FeederAdd",
+                    fl.fs_add AS "FeederSubAdd",
+                    COALESCE(SUM(fl.f_pickup_qty), 0)::integer AS "PickupCount",
+                    COALESCE(SUM(fl.f_mount_qty), 0)::integer AS "PlacementCount",
+                    COALESCE(SUM(fl.f_p_miss_qty), 0)::integer AS "PickupMiss",
+                    COALESCE(SUM(fl.f_r_miss_qty), 0)::integer AS "RecogMiss",
+                    COALESCE(SUM(fl.f_h_miss_qty), 0)::integer AS "HeightMiss",
+                    COALESCE(SUM(fl.f_d_miss_qty), 0)::integer AS "DropMiss",
+                    COALESCE(SUM(fl.f_m_miss_qty), 0)::integer AS "MountMiss",
+                    COALESCE(SUM(fl.f_trs_miss_qty), 0)::integer AS "TransferMiss",
+                    MAX(pr.report_date) AS "LatestReportDate"
+                FROM feeder_logs fl
+                INNER JOIN production_reports pr ON pr.id = fl.report_id
+                LEFT JOIN master_machines mm ON mm.id = pr.machine_id
+                WHERE pr.report_date IS NOT NULL
+                  AND (@startAt IS NULL OR pr.report_date >= @startAt)
+                  AND (@endAt IS NULL OR pr.report_date < @endAt)
+                  AND (@lineName IS NULL OR mm.line = @lineName)
+                  AND (@machineName IS NULL OR mm.machine_name = @machineName)
+                  AND (@stage IS NULL OR mm.stage = @stage)
+                  AND (@partName IS NULL OR fl.part_name = @partName)
+                  AND (@feederId IS NULL OR fl.blk_serial = @feederId)
+                  AND (@feederSlot IS NULL OR fl.f_add = @feederSlot)
+                GROUP BY fl.part_name, mm.line, mm.machine_name, mm.stage, fl.blk_serial, fl.f_add, fl.fs_add
+            )
+            SELECT
+                "PartName", "LineName", "MachineName", "Stage", "FeederId", "FeederAdd", "FeederSubAdd",
+                "PickupCount", "PlacementCount", "PickupMiss", "RecogMiss", "HeightMiss", "DropMiss", "MountMiss", "TransferMiss",
+                COUNT(*) OVER() AS "TotalRecords"
+            FROM grouped
+            ORDER BY "LatestReportDate" DESC, "LineName", "MachineName", "Stage", "PartName", "FeederId", "FeederAdd", "FeederSubAdd"
+            LIMIT @take OFFSET @offset
+            """;
+
+        var parameters = new object[]
+        {
+            NullableTimestamp("startAt", startAt),
+            NullableTimestamp("endAt", endAt),
+            NullableText("lineName", filter.LineName),
+            NullableText("machineName", filter.MachineName),
+            NullableSmallInt("stage", stage),
+            NullableText("partName", filter.PartName),
+            NullableText("feederId", filter.FeederId),
+            NullableText("feederSlot", filter.FeederSlot),
+            new NpgsqlParameter("take", NpgsqlDbType.Integer) { Value = take },
+            new NpgsqlParameter("offset", NpgsqlDbType.Integer) { Value = offset }
+        };
+
+        return await dbContext.Database
+            .SqlQueryRaw<PickPlacementByFeederSqlRow>(sql, parameters)
+            .ToListAsync(cancellationToken);
+    }
+
+    private static NpgsqlParameter NullableText(string name, string? value) =>
+        new(name, NpgsqlDbType.Text) { Value = (object?)value ?? DBNull.Value };
+
+    private static NpgsqlParameter NullableTimestamp(string name, DateTime? value) =>
+        new(name, NpgsqlDbType.Timestamp) { Value = (object?)value ?? DBNull.Value };
+
+    private static NpgsqlParameter NullableSmallInt(string name, short? value) =>
+        new(name, NpgsqlDbType.Smallint) { Value = (object?)value ?? DBNull.Value };
+
+    private static PickPlacementByFeederRow MapRow(PickPlacementByFeederSqlRow row) => new()
+    {
+        PartName = row.PartName,
+        LineName = row.LineName,
+        MachineName = row.MachineName,
+        Stage = row.Stage,
+        FeederId = row.FeederId,
+        FeederTable = GetFeederTable(row.FeederAdd),
+        FeederSlot = GetFeederSlot(row.FeederAdd),
+        Side = row.FeederSubAdd?.ToString() ?? string.Empty,
+        PickupCount = row.PickupCount,
+        PlacementCount = row.PlacementCount,
+        PickupMiss = row.PickupMiss,
+        RecogMiss = row.RecogMiss,
+        HeightMiss = row.HeightMiss,
+        DropMiss = row.DropMiss,
+        MountMiss = row.MountMiss,
+        TransferMiss = row.TransferMiss,
+        ScrapRatio = CalculateScrapRatio(row.PickupCount, row.PlacementCount)
+    };
+
+    private static IReadOnlyList<ReportSelectOption> SelectedOption(string? value)
+    {
+        var options = DefaultOptions().ToList();
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            options.Add(new ReportSelectOption { Value = value, Text = value });
+        }
+
+        return options;
+    }
+
     private IQueryable<MPO_Web_Prj.Models.master_machine> BuildMachineOptionQuery(PickPlacementByFeederFilter filter)
     {
         var query = dbContext.master_machines.AsNoTracking().AsQueryable();

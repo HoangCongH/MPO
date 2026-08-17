@@ -65,6 +65,15 @@ public class DowntimeReportController : Controller
             $"DowntimeReport_{DateTime.Now:yyyyMMddHHmmss}.xls");
     }
 
+    [HttpPost("Batch")]
+    public async Task<IActionResult> Batch([FromForm] DowntimeReportFilter filter, [FromForm] int offset, CancellationToken cancellationToken)
+    {
+        filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
+        filter.Page = Math.Max((offset / ReportPagination.DefaultPageSize) + 1, 1);
+        var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
+        return Json(new { rows = viewModel.Rows, totalRecords = viewModel.Pagination.TotalRecords, nextOffset = offset + viewModel.Rows.Count, hasMore = offset + viewModel.Rows.Count < viewModel.Pagination.TotalRecords });
+    }
+
     private static string Encode(string value)
     {
         return System.Net.WebUtility.HtmlEncode(value);
