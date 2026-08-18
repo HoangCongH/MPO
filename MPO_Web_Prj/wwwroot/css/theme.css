@@ -335,6 +335,72 @@ html.is-sidebar-collapsed .top-header,
   height: 100%;
 }
 
+/* Global collapsible filters. The form keeps its existing layout inside this shell. */
+.collapsible-filter {
+  position: relative;
+}
+
+.collapsible-filter__content {
+  max-height: none;
+  opacity: 1;
+  overflow: visible;
+  transition: max-height .3s ease-in-out, opacity .22s ease-in-out;
+}
+
+.collapsible-filter.is-collapsed .collapsible-filter__content {
+  overflow: hidden;
+}
+
+.collapsible-filter__toggle {
+  align-items: center;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 30px;
+  z-index: 4;
+}
+
+.collapsible-filter__toggle:hover {
+  background: var(--color-primary);
+}
+
+.collapsible-filter__toggle svg {
+  height: 17px;
+  width: 17px;
+}
+
+.collapsible-filter.is-collapsed {
+  min-height: 42px;
+}
+
+.collapsible-filter.is-collapsed .collapsible-filter__toggle {
+  top: 6px;
+}
+
+/* Do not retain centered/max-width report surfaces after the sidebar is hidden. */
+html.is-sidebar-collapsed .app-main__content,
+.dashboard-shell.is-sidebar-collapsed .app-main__content,
+html.is-sidebar-collapsed .app-main__content > .pp-report,
+.dashboard-shell.is-sidebar-collapsed .app-main__content > .pp-report {
+  max-width: none;
+  width: 100%;
+}
+
+html.is-sidebar-collapsed .overall-dashboard,
+.dashboard-shell.is-sidebar-collapsed .overall-dashboard {
+  margin-left: 0;
+  margin-right: 0;
+  max-width: none;
+}
+
 .production-report__table,
 .pp-report__table,
 .overall-dashboard__table {

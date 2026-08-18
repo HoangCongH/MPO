@@ -97,6 +97,7 @@
                 toggle.setAttribute('aria-expanded', (!isCollapsed).toString());
                 localStorage.setItem(storageKey, isCollapsed ? 'true' : 'false');
                 window.setTimeout(() => window.dispatchEvent(new Event('resize')), 260);
+                window.dispatchEvent(new Event('mpo:layoutchange'));
             };
 
             setCollapsed(localStorage.getItem(storageKey) === 'true');
@@ -323,6 +324,7 @@
         })();
     </script>
     <script src="~/js/searchable-select.js"></script>
+    <script src="~/js/collapsible-filters.js" asp-append-version="true"></script>
     <script>
         lucide.createIcons();
         
