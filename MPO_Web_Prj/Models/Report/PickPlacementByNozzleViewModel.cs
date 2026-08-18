@@ -82,3 +82,22 @@ public class PickPlacementByNozzleRow
 
     public bool HasPickupWithoutPlacement => PickupCount > 0 && PlacementCount == 0;
 }
+
+public sealed class PickPlacementByNozzleSqlRow
+{
+    public string PartName { get; init; } = string.Empty;
+    public string LineName { get; init; } = string.Empty;
+    public string MachineName { get; init; } = string.Empty;
+    public string Stage { get; init; } = string.Empty;
+    public string NozzleSlot { get; init; } = string.Empty;
+    public string NozzleChangerSlot { get; init; } = string.Empty;
+    public int PickupCount { get; init; }
+    public int PlacementCount { get; init; }
+    public int PickupMiss { get; init; }
+    public int RecogMiss { get; init; }
+    public int HeightMiss { get; init; }
+    public int DropMiss { get; init; }
+    public int MountMiss { get; init; }
+    public int TransferMiss { get; init; }
+    public long TotalRecords { get; init; }
+}

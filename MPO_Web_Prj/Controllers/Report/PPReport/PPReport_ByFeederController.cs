@@ -90,7 +90,8 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
         [HttpPost("Options")]
         public async Task<IActionResult> Options(
             [FromForm] string field,
-            [FromForm] string? search,
+            [FromQuery] string? search,
+            [FromQuery] int limit,
             [FromForm] PickPlacementByFeederFilter filter,
             CancellationToken cancellationToken)
         {
@@ -100,7 +101,7 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
             }
 
             filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
-            var options = await reportService.GetFilterOptionsAsync(field, filter, search, cancellationToken);
+            var options = await reportService.GetFilterOptionsAsync(field, filter, search, limit, cancellationToken);
             return Json(options);
         }
 

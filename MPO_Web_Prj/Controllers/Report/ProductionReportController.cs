@@ -64,9 +64,19 @@ namespace MPO_Web_Prj.Controllers.Report
         public async Task<IActionResult> Batch([FromForm] MPO_Web_Prj.Models.Report.ProductionReportFilter filter, [FromForm] int offset, CancellationToken cancellationToken)
         {
             filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.HasRequiredDateTime(filter);
-            filter.Page = Math.Max((offset / MPO_Web_Prj.Models.Report.ReportPagination.DefaultPageSize) + 1, 1);
-            var viewModel = await productionReportService.GetReportAsync(filter, cancellationToken);
-            return Json(new { rows = viewModel.Rows, totalRecords = viewModel.Pagination.TotalRecords, nextOffset = offset + viewModel.Rows.Count, hasMore = offset + viewModel.Rows.Count < viewModel.Pagination.TotalRecords });
+            if (!filter.IsApplied) return BadRequest(new { error = MPO_Web_Prj.Services.Reports.ReportFilterGuard.RequiredDateTimeMessage });
+            return Json(await productionReportService.GetBatchAsync(filter, offset, MPO_Web_Prj.Models.Report.ReportPagination.DefaultPageSize, cancellationToken));
+        }
+
+        [HttpPost("Options")]
+        public async Task<IActionResult> Options(
+            [FromQuery] string? search,
+            [FromQuery] int limit,
+            [FromForm] MPO_Web_Prj.Models.Report.ProductionReportFilter filter,
+            CancellationToken cancellationToken)
+        {
+            filter.IsApplied = MPO_Web_Prj.Services.Reports.ReportFilterGuard.HasRequiredDateTime(filter);
+            return Json(await productionReportService.GetFilterOptionsAsync(filter, search, limit, cancellationToken));
         }
 
         private static string Encode(string value)

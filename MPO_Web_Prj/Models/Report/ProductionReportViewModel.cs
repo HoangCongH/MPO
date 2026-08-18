@@ -61,3 +61,16 @@ public class ProductionReportRow
 
     public DateTime? EndTime { get; set; }
 }
+
+public sealed class ProductionReportSqlRow
+{
+    public string LineName { get; init; } = string.Empty;
+    public string Lane { get; init; } = string.Empty;
+    public string ModelName { get; init; } = string.Empty;
+    public string GroupName { get; init; } = string.Empty;
+    public long ProducedQuantityPanel { get; init; }
+    public long ProducedQuantityPattern { get; init; }
+    public DateTime? StartTime { get; init; }
+    public DateTime? EndTime { get; init; }
+    public long TotalRecords { get; init; }
+}

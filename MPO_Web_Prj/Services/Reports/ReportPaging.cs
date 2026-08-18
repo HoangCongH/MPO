@@ -10,7 +10,7 @@ public static class ReportPaging
         {
             Page = Math.Max(requestedPage, 1),
             TotalRecords = Math.Max(totalRecords, 0),
-            // Export receives all matching records; the interactive table stays capped at 500 per page.
+            // Export receives all matching records; the interactive table starts with one 200-row batch.
             PageSize = exportAll ? Math.Max(totalRecords, 1) : ReportPagination.DefaultPageSize
         };
 

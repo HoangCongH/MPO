@@ -19,7 +19,9 @@
                 <label asp-for="Filter.ModelName">Model</label>
                 <select class="report-modelcombo"
                         asp-for="Filter.ModelName"
-                        asp-items="@(new SelectList(Model.ModelOptions, "Value", "Text", Model.Filter.ModelName))">
+                        asp-items="@(new SelectList(Model.ModelOptions, "Value", "Text", Model.Filter.ModelName))"
+                        data-lazy-options-url="@Url.Action("Options", "ProductionReport")"
+                        data-lazy-field="modelName">
                 </select>
         </div>
 

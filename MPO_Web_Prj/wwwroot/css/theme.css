@@ -456,23 +456,6 @@ html.is-sidebar-collapsed .overall-dashboard,
   border-bottom: none !important;
 }
 
-/* Pagination */
-.pp-report__pagination {
-  margin-top: 20px;
-  justify-content: flex-end;
-}
-.pp-report__pagination button {
-  background: var(--bg-sidebar) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  border-radius: var(--border-radius-sm);
-  transition: var(--transition);
-}
-.pp-report__pagination button:hover:not(:disabled) {
-  background: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
-}
-
 /* ==========================================================================
    Custom Select Override
    ========================================================================== */

@@ -36,7 +36,9 @@
         <div class="pp-report__field pp-report__field--part">
             <label asp-for="Filter.PartName">Part name</label>
             <select asp-for="Filter.PartName"
-                    asp-items="@(new SelectList(Model.PartOptions, "Value", "Text", Model.Filter.PartName))">
+                    asp-items="@(new SelectList(Model.PartOptions, "Value", "Text", Model.Filter.PartName))"
+                    data-lazy-options-url="@Url.Action("Options", "PPReport_ByPart")"
+                    data-lazy-field="partName">
             </select>
         </div>
 

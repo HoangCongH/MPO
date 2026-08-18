@@ -9,7 +9,6 @@ namespace MPO_Web_Prj.Services.Reports;
 public class PickPlacementByFeederService : IPickPlacementByFeederService
 {
     private const int InitialBatchSize = 200;
-    private const int OptionLimit = 50;
     private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
     private static readonly TimeOnly EndOfDay = new(23, 59, 59);
 
@@ -123,6 +122,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         string field,
         PickPlacementByFeederFilter filter,
         string? search,
+        int limit,
         CancellationToken cancellationToken)
     {
         NormalizeFilter(filter);
@@ -144,7 +144,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         var options = (await values
             .Distinct()
             .OrderBy(value => value)
-            .Take(OptionLimit)
+            .Take(ReportQueryParameters.ClampOptionLimit(limit))
             .Select(value => new ReportSelectOption { Value = value, Text = value })
             .ToListAsync(cancellationToken))
             .ToList();
@@ -171,15 +171,11 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         int take,
         CancellationToken cancellationToken)
     {
-        var startAt = filter.StartDate?.ToDateTime(filter.StartTime ?? StartOfDay);
-        DateTime? endAt = null;
-
-        if (filter.EndDate.HasValue)
-        {
-            endAt = filter.EndTime.HasValue && filter.EndTime.Value != EndOfDay
-                ? filter.EndDate.Value.ToDateTime(filter.EndTime.Value)
-                : filter.EndDate.Value.AddDays(1).ToDateTime(StartOfDay);
-        }
+        var (startAt, endAt) = ReportQueryParameters.DateRange(
+            filter.StartDate,
+            filter.StartTime,
+            filter.EndDate,
+            filter.EndTime);
 
         short? stage = short.TryParse(filter.Stage, out var parsedStage) ? parsedStage : null;
         const string sql = """

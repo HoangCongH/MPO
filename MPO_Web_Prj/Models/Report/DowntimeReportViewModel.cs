@@ -58,3 +58,19 @@ public class DowntimeReportRow
 
     public DateTime? LatestReportDate { get; set; }
 }
+
+public sealed class DowntimeReportSqlRow
+{
+    public string LineName { get; init; } = string.Empty;
+    public long ChipPickupErrorCount { get; init; }
+    public decimal ChipPickupErrorTime { get; init; }
+    public long ChipRecogErrorCount { get; init; }
+    public decimal ChipRecogErrorTime { get; init; }
+    public long SingleErrorStopCount { get; init; }
+    public decimal SingleErrorStopTime { get; init; }
+    public long TroubleStopCount { get; init; }
+    public decimal TroubleStopTime { get; init; }
+    public long PartExhaustStopCount { get; init; }
+    public decimal PartExhaustStopTime { get; init; }
+    public long TotalRecords { get; init; }
+}

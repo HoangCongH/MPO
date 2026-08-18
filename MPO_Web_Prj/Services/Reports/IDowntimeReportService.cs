@@ -5,4 +5,5 @@ namespace MPO_Web_Prj.Services.Reports;
 public interface IDowntimeReportService
 {
     Task<DowntimeReportViewModel> GetReportAsync(DowntimeReportFilter filter, CancellationToken cancellationToken);
+    Task<ReportBatch<DowntimeReportRow>> GetBatchAsync(DowntimeReportFilter filter, int offset, int take, CancellationToken cancellationToken);
 }

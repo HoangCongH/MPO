@@ -7,212 +7,109 @@ namespace MPO_Web_Prj.Services.Reports;
 
 public class TotalPickupPlacementReportService : ITotalPickupPlacementReportService
 {
-    private static readonly TimeOnly StartOfDay = TimeOnly.MinValue;
-    private static readonly TimeOnly EndOfDay = new(23, 59, 59);
-
     private readonly AppDbContext dbContext;
 
-    public TotalPickupPlacementReportService(AppDbContext dbContext)
-    {
-        this.dbContext = dbContext;
-    }
+    public TotalPickupPlacementReportService(AppDbContext dbContext) => this.dbContext = dbContext;
 
     public async Task<TotalPickupPlacementReportViewModel> GetReportAsync(TotalPickupPlacementReportFilter filter, CancellationToken cancellationToken)
     {
         NormalizeFilter(filter);
-
         try
         {
-            var lineOptions = await BuildOptionsAsync(
-                dbContext.master_machines
-                    .AsNoTracking()
-                    .Where(machine => machine.line != null && machine.line != string.Empty)
-                    .Select(machine => machine.line!),
-                cancellationToken);
-
+            var lineOptions = await BuildLineOptionsAsync(cancellationToken);
             if (!filter.IsApplied)
             {
-                return new TotalPickupPlacementReportViewModel
-                {
-                    Filter = filter,
-                    LineOptions = lineOptions,
-                    Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
-                    Rows = []
-                };
+                return new TotalPickupPlacementReportViewModel { Filter = filter, LineOptions = lineOptions, Pagination = ReportPaging.Create(1, 0), Rows = [] };
             }
 
-            var latestReportDate = await dbContext.production_reports
-                .AsNoTracking()
-                .Where(report => report.report_date != null)
-                .OrderByDescending(report => report.report_date)
-                .Select(report => report.report_date)
-                .FirstOrDefaultAsync(cancellationToken);
-
-            SetDefaultDateRange(filter, latestReportDate);
-
-            if (!lineOptions.Any(option => option.Value == filter.LineName))
-            {
-                filter.LineName = null;
-            }
-
-            var query = dbContext.production_reports
-                .AsNoTracking()
-                .Include(report => report.machine)
-                .AsQueryable();
-
-            if (!string.IsNullOrWhiteSpace(filter.LineName))
-            {
-                query = query.Where(report => report.machine != null
-                    && report.machine.line == filter.LineName);
-            }
-
-            if (filter.StartDate.HasValue)
-            {
-                var startDateTime = filter.StartDate.Value.ToDateTime(filter.StartTime ?? StartOfDay);
-                query = query.Where(report => report.report_date >= startDateTime);
-            }
-
-            if (filter.EndDate.HasValue)
-            {
-                if (filter.EndTime.HasValue && filter.EndTime.Value != EndOfDay)
-                {
-                    var endDateTime = filter.EndDate.Value.ToDateTime(filter.EndTime.Value);
-                    query = query.Where(report => report.report_date <= endDateTime);
-                }
-                else
-                {
-                    var nextDateTime = filter.EndDate.Value.AddDays(1).ToDateTime(StartOfDay);
-                    query = query.Where(report => report.report_date < nextDateTime);
-                }
-            }
-
-            var groupedRows = await query
-                .GroupBy(report => report.machine != null && report.machine.line != null
-                    ? report.machine.line
-                    : string.Empty)
-                .Select(group => new
-                {
-                    LineName = group.Key,
-                    TotalPickup = group.Sum(report => (long)(report.count_pickup ?? 0)),
-                    TotalPlacement = group.Sum(report => (long)(report.count_mount ?? 0)),
-                    LatestReportDate = group.Max(report => report.report_date)
-                })
-                .OrderByDescending(row => row.LatestReportDate)
-                .ThenBy(row => row.LineName)
-                .ToListAsync(cancellationToken);
-
-            var allRows = groupedRows
-                .Select(row => new TotalPickupPlacementReportRow
-                {
-                    LineName = row.LineName,
-                    TotalPickup = row.TotalPickup,
-                    TotalPlacement = row.TotalPlacement,
-                    Ppm = CalculatePpm(row.TotalPickup, row.TotalPlacement)
-                })
-                .ToList();
-
-            var pagination = ReportPaging.Create(filter.Page, allRows.Count, filter.ExportAll);
-            filter.Page = pagination.Page;
-            var rows = allRows
-                .Skip(pagination.Skip)
-                .Take(pagination.PageSize)
-                .ToList();
-
+            var batch = await GetBatchAsync(filter, 0, filter.ExportAll ? int.MaxValue : ReportQueryParameters.BatchSize, cancellationToken);
             return new TotalPickupPlacementReportViewModel
             {
                 Filter = filter,
                 LineOptions = lineOptions,
-                Pagination = pagination,
-                Rows = rows
+                Pagination = new ReportPagination
+                {
+                    Page = 1,
+                    PageSize = filter.ExportAll ? Math.Max(batch.TotalRecords, 1) : ReportQueryParameters.BatchSize,
+                    TotalRecords = batch.TotalRecords
+                },
+                Rows = batch.Rows
             };
         }
-        catch (NpgsqlException ex)
-        {
-            return CreateDatabaseErrorViewModel(filter, ex);
-        }
-        catch (TimeoutException ex)
-        {
-            return CreateDatabaseErrorViewModel(filter, ex);
-        }
-        catch (InvalidOperationException ex) when (IsDatabaseConnectionFailure(ex))
+        catch (Exception ex) when (IsDatabaseConnectionFailure(ex))
         {
             return CreateDatabaseErrorViewModel(filter, ex);
         }
     }
 
-    private static decimal CalculatePpm(long totalPickup, long totalPlacement)
-    {
-        if (totalPickup <= 0)
-        {
-            return 0;
-        }
-
-        return decimal.Round(1_000_000m * (totalPickup - totalPlacement) / totalPickup, 2);
-    }
-
-    private static async Task<IReadOnlyList<ReportSelectOption>> BuildOptionsAsync(
-        IQueryable<string> values,
+    public async Task<ReportBatch<TotalPickupPlacementReportRow>> GetBatchAsync(
+        TotalPickupPlacementReportFilter filter,
+        int offset,
+        int take,
         CancellationToken cancellationToken)
     {
-        var options = new List<ReportSelectOption>
+        NormalizeFilter(filter);
+        var (startAt, endAt) = ReportQueryParameters.DateRange(filter.StartDate, filter.StartTime, filter.EndDate, filter.EndTime);
+        const string sql = """
+            WITH grouped AS (
+                SELECT
+                    COALESCE(mm.line, '') AS "LineName",
+                    COALESCE(SUM(pr.count_pickup), 0)::bigint AS "TotalPickup",
+                    COALESCE(SUM(pr.count_mount), 0)::bigint AS "TotalPlacement",
+                    MAX(pr.report_date) AS "LatestReportDate"
+                FROM production_reports pr
+                LEFT JOIN master_machines mm ON mm.id = pr.machine_id
+                WHERE pr.report_date IS NOT NULL
+                  AND (@startAt IS NULL OR pr.report_date >= @startAt)
+                  AND (@endAt IS NULL OR pr.report_date < @endAt)
+                  AND (@lineName IS NULL OR mm.line = @lineName)
+                GROUP BY mm.line
+            )
+            SELECT "LineName", "TotalPickup", "TotalPlacement", COUNT(*) OVER() AS "TotalRecords"
+            FROM grouped
+            ORDER BY "LatestReportDate" DESC, "LineName"
+            LIMIT @take OFFSET @offset
+            """;
+
+        var sqlRows = await dbContext.Database.SqlQueryRaw<TotalPickupPlacementReportSqlRow>(sql,
+            ReportQueryParameters.Timestamp("startAt", startAt),
+            ReportQueryParameters.Timestamp("endAt", endAt),
+            ReportQueryParameters.Text("lineName", filter.LineName),
+            ReportQueryParameters.Integer("take", Math.Clamp(take, 1, int.MaxValue)),
+            ReportQueryParameters.Integer("offset", Math.Max(offset, 0)))
+            .ToListAsync(cancellationToken);
+        var rows = sqlRows.Select(row => new TotalPickupPlacementReportRow
         {
-            new() { Value = string.Empty, Text = "All" }
-        };
-
-        options.AddRange(await values
-            .Distinct()
-            .OrderBy(value => value)
-            .Select(value => new ReportSelectOption
-            {
-                Value = value,
-                Text = value
-            })
-            .ToListAsync(cancellationToken));
-
-        return options;
+            LineName = row.LineName,
+            TotalPickup = row.TotalPickup,
+            TotalPlacement = row.TotalPlacement,
+            Ppm = CalculatePpm(row.TotalPickup, row.TotalPlacement)
+        }).ToList();
+        return ReportQueryParameters.Batch(rows, sqlRows.FirstOrDefault()?.TotalRecords ?? 0, offset);
     }
 
-    private static TotalPickupPlacementReportViewModel CreateDatabaseErrorViewModel(TotalPickupPlacementReportFilter filter, Exception exception)
+    private async Task<IReadOnlyList<ReportSelectOption>> BuildLineOptionsAsync(CancellationToken cancellationToken)
     {
-        return new TotalPickupPlacementReportViewModel
-        {
-            Filter = filter,
-            Pagination = ReportPaging.Create(filter.Page, 0, filter.ExportAll),
-            ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
-        };
+        var values = await dbContext.master_machines.AsNoTracking()
+            .Where(machine => machine.line != null && machine.line != string.Empty)
+            .Select(machine => machine.line!).Distinct().OrderBy(value => value).ToListAsync(cancellationToken);
+        return ReportQueryParameters.WithFixedOptions(values.Select(value => new ReportSelectOption { Value = value, Text = value }).ToList(), null);
     }
 
+    private static decimal CalculatePpm(long pickup, long placement) => pickup <= 0 ? 0 : decimal.Round(1_000_000m * (pickup - placement) / pickup, 2);
+    private static void NormalizeFilter(TotalPickupPlacementReportFilter filter) => filter.LineName = string.IsNullOrWhiteSpace(filter.LineName) ? null : filter.LineName.Trim();
+    private static TotalPickupPlacementReportViewModel CreateDatabaseErrorViewModel(TotalPickupPlacementReportFilter filter, Exception exception) => new()
+    {
+        Filter = filter,
+        Pagination = ReportPaging.Create(1, 0),
+        ErrorMessage = $"Cannot connect to PostgreSQL database. Please check the DB server/IP, network/VPN, port 5432, database name, username and password. Detail: {exception.Message}"
+    };
     private static bool IsDatabaseConnectionFailure(Exception exception)
     {
         for (var current = exception; current != null; current = current.InnerException)
         {
-            if (current is NpgsqlException or TimeoutException)
-            {
-                return true;
-            }
+            if (current is NpgsqlException or TimeoutException) return true;
         }
-
         return false;
-    }
-
-    private static void NormalizeFilter(TotalPickupPlacementReportFilter filter)
-    {
-        filter.LineName = string.IsNullOrWhiteSpace(filter.LineName)
-            ? null
-            : filter.LineName.Trim();
-    }
-
-    private static void SetDefaultDateRange(TotalPickupPlacementReportFilter filter, DateTime? latestReportDate)
-    {
-        if (filter.StartDate.HasValue || filter.EndDate.HasValue || !latestReportDate.HasValue)
-        {
-            return;
-        }
-
-        var latestDate = DateOnly.FromDateTime(latestReportDate.Value);
-        filter.StartDate = latestDate;
-        filter.StartTime = StartOfDay;
-        filter.EndDate = latestDate;
-        filter.EndTime = EndOfDay;
     }
 }

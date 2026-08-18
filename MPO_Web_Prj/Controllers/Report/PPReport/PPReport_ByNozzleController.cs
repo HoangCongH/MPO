@@ -73,9 +73,21 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
         public async Task<IActionResult> Batch([FromForm] PickPlacementByNozzleFilter filter, [FromForm] int offset, CancellationToken cancellationToken)
         {
             filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
-            filter.Page = Math.Max((offset / ReportPagination.DefaultPageSize) + 1, 1);
-            var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
-            return Json(new { rows = viewModel.Rows, totalRecords = viewModel.Pagination.TotalRecords, nextOffset = offset + viewModel.Rows.Count, hasMore = offset + viewModel.Rows.Count < viewModel.Pagination.TotalRecords });
+            if (!filter.IsApplied) return BadRequest(new { error = ReportFilterGuard.RequiredDateTimeMessage });
+            return Json(await reportService.GetBatchAsync(filter, offset, ReportPagination.DefaultPageSize, cancellationToken));
+        }
+
+        [HttpPost("Options")]
+        public async Task<IActionResult> Options(
+            [FromForm] string field,
+            [FromQuery] string? search,
+            [FromQuery] int limit,
+            [FromForm] PickPlacementByNozzleFilter filter,
+            CancellationToken cancellationToken)
+        {
+            if (field is not ("partName" or "nozzleSlot")) return BadRequest(new { error = "Unknown filter field." });
+            filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
+            return Json(await reportService.GetFilterOptionsAsync(field, filter, search, limit, cancellationToken));
         }
 
         private static string Encode(string value)

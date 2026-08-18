@@ -58,3 +58,17 @@ public class CycleTimeReportRow
 
     public decimal? CycleTime3 { get; set; }
 }
+
+public sealed class CycleTimeReportSqlRow
+{
+    public string LineName { get; init; } = string.Empty;
+    public string ModelName { get; init; } = string.Empty;
+    public string GroupName { get; init; } = string.Empty;
+    public decimal CycleTime1Total { get; init; }
+    public long CycleTime1Count { get; init; }
+    public decimal CycleTime2Total { get; init; }
+    public long CycleTime2Count { get; init; }
+    public decimal CycleTime3Total { get; init; }
+    public long CycleTime3Count { get; init; }
+    public long TotalRecords { get; init; }
+}

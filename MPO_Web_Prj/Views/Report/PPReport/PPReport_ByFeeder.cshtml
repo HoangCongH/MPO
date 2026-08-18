@@ -83,7 +83,7 @@
     <div class="pp-report__table-wrap"
          data-feeder-batch-url="@Url.Action("Batch", "PPReport_ByFeeder")"
          data-next-offset="@Model.Rows.Count"
-         data-has-more="@Model.Pagination.TotalRecords > Model.Rows.Count">
+         data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)">
         <table class="pp-report__table pp-report__table--wide">
             <colgroup>
                 <col style="width: 145px;" />

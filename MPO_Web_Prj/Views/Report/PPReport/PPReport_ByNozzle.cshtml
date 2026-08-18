@@ -29,12 +29,18 @@
 
         <div class="pp-report__field pp-report__field--part">
             <label asp-for="Filter.PartName">Nozzle Name</label>
-            <select asp-for="Filter.PartName" asp-items="@(new SelectList(Model.PartOptions, "Value", "Text", Model.Filter.PartName))"></select>
+            <select asp-for="Filter.PartName"
+                    asp-items="@(new SelectList(Model.PartOptions, "Value", "Text", Model.Filter.PartName))"
+                    data-lazy-options-url="@Url.Action("Options", "PPReport_ByNozzle")"
+                    data-lazy-field="partName"></select>
         </div>
 
         <div class="pp-report__field">
             <label asp-for="Filter.NozzleSlot">Nozzle Slot</label>
-            <select asp-for="Filter.NozzleSlot" asp-items="@(new SelectList(Model.NozzleSlotOptions, "Value", "Text", Model.Filter.NozzleSlot))"></select>
+            <select asp-for="Filter.NozzleSlot"
+                    asp-items="@(new SelectList(Model.NozzleSlotOptions, "Value", "Text", Model.Filter.NozzleSlot))"
+                    data-lazy-options-url="@Url.Action("Options", "PPReport_ByNozzle")"
+                    data-lazy-field="nozzleSlot"></select>
         </div>
 
         <div class="pp-report__field">

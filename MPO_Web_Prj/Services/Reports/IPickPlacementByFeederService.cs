@@ -16,5 +16,6 @@ public interface IPickPlacementByFeederService
         string field,
         PickPlacementByFeederFilter filter,
         string? search,
+        int limit,
         CancellationToken cancellationToken);
 }

@@ -94,15 +94,19 @@ function initSearchableSelects() {
             const form = select.closest('form');
             const formData = new FormData(form);
             formData.append('field', lazyField);
-            formData.append('search', search);
+            const requestUrl = new URL(lazyOptionsUrl, window.location.origin);
+            requestUrl.searchParams.set('search', search);
+            requestUrl.searchParams.set('limit', '50');
 
             try {
-                const response = await fetch(lazyOptionsUrl, { method: 'POST', body: formData, credentials: 'same-origin' });
+                const response = await fetch(requestUrl, { method: 'POST', body: formData, credentials: 'same-origin' });
                 if (!response.ok) throw new Error('Unable to load options.');
                 const payload = await response.json();
                 if (sequence !== requestSequence) return;
 
                 lazyOptions = payload.map(item => ({ value: item.value ?? item.Value ?? '', text: item.text ?? item.Text ?? '' }));
+                lazyOptions = lazyOptions.filter(option => option.value !== '');
+                lazyOptions.unshift({ value: '', text: 'All' });
                 const current = selectedOption();
                 if (current && !lazyOptions.some(option => option.value === current.value)) {
                     lazyOptions.splice(1, 0, { value: current.value, text: current.text });

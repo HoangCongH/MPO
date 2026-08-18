@@ -42,3 +42,11 @@ public class TotalPickupPlacementReportRow
 
     public decimal Ppm { get; set; }
 }
+
+public sealed class TotalPickupPlacementReportSqlRow
+{
+    public string LineName { get; init; } = string.Empty;
+    public long TotalPickup { get; init; }
+    public long TotalPlacement { get; init; }
+    public long TotalRecords { get; init; }
+}

@@ -30,13 +30,27 @@ body {
 
 .report-workspace {
   box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
   padding: 0;
   width: 100%;
 }
 
 .report-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
   min-width: 0;
+  overflow: hidden;
   width: 100%;
+}
+
+.report-content > .pp-report--table {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .report-linecombo {
@@ -782,7 +796,8 @@ html.is-sidebar-collapsed .app-main,
 
 .pp-report__table-wrap {
   max-height: calc(100dvh - clamp(190px, 22dvh, 240px));
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: auto;
   scrollbar-gutter: stable;
   width: 100%;
 }
@@ -1045,24 +1060,6 @@ html.is-sidebar-collapsed .app-main,
 .pp-report__header-actions .pp-report__record-count {
   margin: 0;
 }
-.pp-report__pagination {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-.pp-report__pagination button {
-  background: #00a842;
-  border: none;
-  color: #050505;
-  padding: 4px 12px;
-  cursor: pointer;
-}
-.pp-report__pagination button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
 /* Searchable Select Custom UI */
 .searchable-select {
   position: relative;
