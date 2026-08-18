@@ -24,6 +24,13 @@
 
     var errorStopColors = new[] { "#6366F1", "#38BDF8", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6" };
     var errorStopTotal = Model.ErrorStopTime.Sum(slice => slice.Value);
+    var dashboardPayload = new
+    {
+        charts = boardPayload,
+        errorStop = errorStopPayload,
+        feeders = Model.TopWorstFeeders,
+        nozzles = Model.TopWorstNozzles
+    };
 }
 
 <section class="pp-report overall-dashboard">
@@ -36,6 +43,7 @@
           asp-action="Index"
           data-skip-filter-restore="true"
           method="post">
+        <input type="hidden" name="AutoRefresh" value="@Model.BoardProduced.Filter.AutoRefresh" />
         <div class="pp-report__field overall-dashboard-line-field">
             <label asp-for="BoardProduced.Filter.Line1">Line</label>
             <select asp-for="BoardProduced.Filter.Line1" name="Line1" asp-items="@(new SelectList(Model.BoardProduced.LineOptions, "Value", "Text", Model.BoardProduced.Filter.Line1))"></select>
@@ -87,7 +95,6 @@
 
         <section class="overall-dashboard__panel overall-dashboard__panel--feeder">
             <h2>Top worst feeder</h2>
-            <div class="pp-report__record-count">@Model.TopWorstFeeders.Count records</div>
             <div class="overall-dashboard__table-wrap">
                 <table class="overall-dashboard__table overall-dashboard__table--feeder">
                     <colgroup>
@@ -112,7 +119,7 @@
                             <th>PPM</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="overallWorstFeederRows">
                         @foreach (var row in Model.TopWorstFeeders)
                         {
                             <tr>
@@ -143,7 +150,7 @@
                 <div class="overall-dashboard__pie-chart">
                     <canvas id="overallErrorStopTimeChart"></canvas>
                 </div>
-                <ul class="overall-dashboard__pie-legend" aria-label="Error stop time legend">
+                <ul class="overall-dashboard__pie-legend" id="overallErrorStopLegend" aria-label="Error stop time legend">
                     @for (var i = 0; i < Model.ErrorStopTime.Count; i++)
                     {
                         var slice = Model.ErrorStopTime[i];
@@ -163,7 +170,6 @@
 
         <section class="overall-dashboard__panel overall-dashboard__panel--nozzle">
             <h2>Top worst nozzle</h2>
-            <div class="pp-report__record-count">@Model.TopWorstNozzles.Count records</div>
             <div class="overall-dashboard__table-wrap">
                 <table class="overall-dashboard__table">
                     <thead>
@@ -176,7 +182,7 @@
                             <th>PPM</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="overallWorstNozzleRows">
                         @foreach (var row in Model.TopWorstNozzles)
                         {
                             <tr>
@@ -202,8 +208,9 @@
 </section>
 
 <script>
-    const overallBoardCharts = @Html.Raw(JsonSerializer.Serialize(boardPayload));
-    const overallErrorStopChart = @Html.Raw(JsonSerializer.Serialize(errorStopPayload));
+    const initialOverallDashboardData = @Html.Raw(JsonSerializer.Serialize(dashboardPayload));
+    const overallBoardCharts = initialOverallDashboardData.charts;
+    const overallErrorStopChart = initialOverallDashboardData.errorStop;
     const overallDashboardColors = ['#6366F1', '#38BDF8', '#22C55E', '#F59E0B', '#EF4444', '#8B5CF6'];
 
     const createOverallIntervalChartData = chart => {
@@ -334,12 +341,14 @@
                                 ? intervalChart.boundaryLabels[value] || ''
                                 : ''
                         },
-                        grid: { color: 'rgba(255,255,255,0.07)' }
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: 'rgba(182,194,217,0.48)' }
                     },
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: 'rgba(182,194,217,0.48)' },
                         ticks: { color: '#B6C2D9' }
                     }
                 },
@@ -378,6 +387,165 @@
             }
         });
     }
+
+    const overallBoardGrid = document.querySelector('.overall-dashboard__board-grid');
+    const overallFeederRows = document.getElementById('overallWorstFeederRows');
+    const overallNozzleRows = document.getElementById('overallWorstNozzleRows');
+    const overallErrorStopLegend = document.getElementById('overallErrorStopLegend');
+    const overallDashboardForm = document.querySelector('.overall-dashboard .board-count-filter');
+    const overallAutoRefreshInput = overallDashboardForm?.querySelector('input[name="AutoRefresh"]');
+    let overallRefreshInFlight = false;
+
+    const createOverallBoardChart = (canvas, chart) => {
+        const intervalChart = createOverallIntervalChartData(chart);
+        const bucketCount = Math.max(intervalChart.boundaryLabels.length - 1, 1);
+
+        return new Chart(canvas, {
+            type: 'bar',
+            data: { datasets: intervalChart.datasets },
+            options: {
+                animation: false,
+                maintainAspectRatio: false,
+                normalized: true,
+                responsive: true,
+                layout: { padding: { left: 8, right: 8, bottom: 6 } },
+                plugins: {
+                    legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 12 }, color: '#B6C2D9' } },
+                    tooltip: {
+                        callbacks: {
+                            title: context => {
+                                const bucketIndex = Math.floor(context[0].parsed.x);
+                                const start = intervalChart.boundaryLabels[bucketIndex] || '';
+                                const end = intervalChart.boundaryLabels[bucketIndex + 1] || '';
+                                return end ? `${start} - ${end}` : start;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        type: 'linear', stacked: true, min: 0, max: bucketCount, offset: false,
+                        ticks: {
+                            autoSkip: false, includeBounds: true, maxRotation: 60, minRotation: 60, stepSize: 1,
+                            color: '#B6C2D9', font: { size: 9 },
+                            callback: value => Number.isInteger(value) ? intervalChart.boundaryLabels[value] || '' : ''
+                        },
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: 'rgba(182,194,217,0.48)' }
+                    },
+                    y: {
+                        stacked: true, beginAtZero: true, ticks: { color: '#B6C2D9' },
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: 'rgba(182,194,217,0.48)' }
+                    }
+                },
+                datasets: { bar: { barThickness: getOverallBoardBarThickness(canvas, bucketCount), maxBarThickness: 30 } }
+            }
+        });
+    };
+
+    const renderOverallBoardCharts = charts => {
+        document.querySelectorAll('[id^="overallBoardProducedChart"]').forEach(canvas => Chart.getChart(canvas)?.destroy());
+        overallBoardGrid.replaceChildren();
+        charts.forEach((chart, index) => {
+            const box = document.createElement('div');
+            box.className = 'overall-dashboard__chart-box';
+            const title = document.createElement('h3');
+            title.textContent = chart.lineName;
+            const canvasWrap = document.createElement('div');
+            canvasWrap.className = 'overall-dashboard__canvas';
+            const canvas = document.createElement('canvas');
+            canvas.id = `overallBoardProducedChart${index}`;
+            canvasWrap.appendChild(canvas);
+            box.append(title, canvasWrap);
+            overallBoardGrid.appendChild(box);
+            createOverallBoardChart(canvas, chart);
+        });
+    };
+
+    const renderOverallRows = (tbody, rows, columns, emptyMessage) => {
+        tbody.replaceChildren();
+        if (!rows.length) {
+            const row = document.createElement('tr');
+            const cell = document.createElement('td');
+            cell.className = 'pp-report__empty';
+            cell.colSpan = columns.length;
+            cell.textContent = emptyMessage;
+            row.appendChild(cell);
+            tbody.appendChild(row);
+            return;
+        }
+        rows.forEach(item => {
+            const row = document.createElement('tr');
+            columns.forEach(column => {
+                const cell = document.createElement('td');
+                const value = item[column];
+                cell.textContent = column === 'ppm' ? Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value ?? '';
+                row.appendChild(cell);
+            });
+            tbody.appendChild(row);
+        });
+    };
+
+    const renderErrorStop = errorStop => {
+        const canvas = document.getElementById('overallErrorStopTimeChart');
+        Chart.getChart(canvas)?.destroy();
+        new Chart(canvas, {
+            type: 'pie',
+            data: { labels: errorStop.labels, datasets: [{ data: errorStop.values, backgroundColor: overallDashboardColors, borderColor: '#1D2645', borderWidth: 2 }] },
+            options: { animation: false, maintainAspectRatio: false, responsive: true, plugins: { legend: { display: false } } }
+        });
+        overallErrorStopLegend.replaceChildren();
+        const total = errorStop.values.reduce((sum, value) => sum + Number(value || 0), 0);
+        errorStop.labels.forEach((label, index) => {
+            const item = document.createElement('li');
+            const swatch = document.createElement('span');
+            swatch.className = 'overall-dashboard__pie-swatch';
+            swatch.style.backgroundColor = overallDashboardColors[index % overallDashboardColors.length];
+            const text = document.createElement('span');
+            text.className = 'overall-dashboard__pie-label';
+            text.textContent = label;
+            const value = document.createElement('span');
+            value.className = 'overall-dashboard__pie-value';
+            value.textContent = `${(total ? Number(errorStop.values[index] || 0) / total * 100 : 0).toFixed(2)}%`;
+            item.append(swatch, text, value);
+            overallErrorStopLegend.appendChild(item);
+        });
+    };
+
+    const refreshOverallDashboard = async () => {
+        if (overallRefreshInFlight || !overallDashboardForm) return;
+        overallRefreshInFlight = true;
+        try {
+            const body = new FormData(overallDashboardForm);
+            const now = new Date();
+            const localNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+            body.append('ClientNow', localNow);
+            const response = await fetch('@Url.Action("Refresh", "OverallDashboard")', { method: 'POST', body, credentials: 'same-origin' });
+            if (!response.ok) throw new Error('Dashboard refresh failed.');
+            const data = await response.json();
+            renderOverallBoardCharts(data.charts || []);
+            renderErrorStop(data.errorStop || { labels: [], values: [] });
+            renderOverallRows(overallFeederRows, data.feeders || [], ['feederId', 'feederTable', 'feederSlot', 'side', 'partName', 'totalPickup', 'totalPlacement', 'ppm'], 'No feeder data found.');
+            renderOverallRows(overallNozzleRows, data.nozzles || [], ['nozzleSlot', 'head', 'partName', 'totalPickup', 'totalPlacement', 'ppm'], 'No nozzle data found.');
+            if (data.filter?.autoRefresh) {
+                document.getElementById('overallDashboardTime').value = String(data.filter.shift);
+                overallDashboardForm.querySelector('input[name="StartDate"]').value = data.filter.startDate || '';
+                overallDashboardForm.querySelector('input[name="EndDate"]').value = data.filter.endDate || '';
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            overallRefreshInFlight = false;
+        }
+    };
+
+    overallDashboardForm?.addEventListener('change', event => {
+        if (event.isTrusted && overallAutoRefreshInput) overallAutoRefreshInput.value = 'false';
+    });
+    refreshOverallDashboard();
+    const overallRefreshTimer = window.setInterval(refreshOverallDashboard, 30_000);
+    window.addEventListener('pagehide', () => window.clearInterval(overallRefreshTimer), { once: true });
 </script>
 
 @functions {

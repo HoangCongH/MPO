@@ -140,40 +140,73 @@ public class BoardCountChartService : IBoardCountChartService
 
         return selectedLines.Select(lineName =>
         {
-            var linePoints = points
-                .Where(point => point.LineName == lineName
-                    && IsSelectedLane(point.Lane, filter.Lane))
+            var allLinePoints = points
+                .Where(point => point.LineName == lineName)
                 .ToList();
 
-            var series = new[]
-            {
-                new BoardCountLaneSeries
+            var laneSelections = filter.SplitLanes ? new[] { 1, 2 } : new[] { filter.Lane };
+            var series = laneSelections
+                .Select(selectedLane =>
                 {
-                    LaneName = filter.Lane == 0 ? "All Lanes" : $"Lane {filter.Lane}",
-                Values = bucketLabels
-                    .Select(bucket => linePoints
-                        .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
-                        .Sum(point => point.BoardCount))
-                    .ToList(),
-                    ModelNames = bucketLabels
-                        .Select(bucket => string.Join(", ", linePoints
-                            .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
-                            .Select(point => point.ModelName)
-                            .Where(modelName => !string.IsNullOrWhiteSpace(modelName))
-                            .Select(modelName => modelName!.Trim())
-                            .Distinct(StringComparer.OrdinalIgnoreCase)))
+                    var lanePoints = allLinePoints
+                        .Where(point => IsSelectedLane(point.Lane, selectedLane))
+                        .ToList();
+
+                    return new BoardCountLaneSeries
+                    {
+                        LaneName = selectedLane == 0 ? "All Lanes" : $"Lane {selectedLane}",
+                        Values = bucketLabels
+                            .Select(bucket => lanePoints
+                                .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
+                                .Sum(point => point.BoardCount))
+                            .ToList(),
+                        ModelNames = bucketLabels
+                            .Select(bucket => string.Join(", ", lanePoints
+                                .Where(point => GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
+                                .Select(point => point.ModelName)
+                                .Where(modelName => !string.IsNullOrWhiteSpace(modelName))
+                                .Select(modelName => modelName!.Trim())
+                                .Distinct(StringComparer.OrdinalIgnoreCase)))
+                            .ToList()
+                    };
+                })
+                .ToList();
+
+            var linePoints = allLinePoints
+                .Where(point => IsSelectedLane(point.Lane, filter.Lane))
+                .ToList();
+
+            var modelSeries = linePoints
+                .Select(point => NormalizeModelName(point.ModelName))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(modelName => modelName, StringComparer.OrdinalIgnoreCase)
+                .Select(modelName => new BoardCountModelSeries
+                {
+                    ModelName = modelName,
+                    Values = bucketLabels
+                        .Select(bucket => linePoints
+                            .Where(point => string.Equals(
+                                    NormalizeModelName(point.ModelName),
+                                    modelName,
+                                    StringComparison.OrdinalIgnoreCase)
+                                && GetPointBucketStart(point.Time, bucketType, isShiftOnlyFilter) == bucket.Start)
+                            .Sum(point => point.BoardCount))
                         .ToList()
-                }
-            };
+                })
+                .ToList();
 
             return new BoardCountLineChart
             {
                 LineName = lineName,
                 Labels = bucketLabels.Select(bucket => bucket.Label).ToList(),
-                Series = series
+                Series = series,
+                ModelSeries = modelSeries
             };
         }).ToList();
     }
+
+    private static string NormalizeModelName(string? modelName) =>
+        string.IsNullOrWhiteSpace(modelName) ? "Unspecified model" : modelName.Trim();
 
     private async Task<IReadOnlyList<string>> GetLastMachineIdsByLineAsync(
         IReadOnlyList<string> selectedLines,

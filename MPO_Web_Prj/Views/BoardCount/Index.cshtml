@@ -14,6 +14,11 @@
             laneName = series.LaneName,
             values = series.Values,
             modelNames = series.ModelNames
+        }),
+        modelSeries = chart.ModelSeries.Select(series => new
+        {
+            modelName = series.ModelName,
+            values = series.Values
         })
     });
 }
@@ -103,28 +108,30 @@
 
 <script>
     const boardCountCharts = @Html.Raw(JsonSerializer.Serialize(chartPayload));
-    const boardCountColors = {
-        'Lane 1': '#22C55E',
-        'Lane 2': '#F97316',
-        'All Lanes': '#38BDF8'
-    };
-    const boardCountFallbackColors = ['#A78BFA', '#F472B6', '#FACC15'];
+    const boardCountModelPalette = [
+        '#22D3EE', '#FBBF24', '#A78BFA', '#34D399',
+        '#60A5FA', '#C4B5FD', '#5EEAD4', '#93C5FD',
+        '#FDE68A', '#D8B4FE', '#86EFAC', '#67E8F9'
+    ];
+
+    const modelColorMap = new Map(
+        [...new Set(boardCountCharts.flatMap(chart => chart.modelSeries.map(series => series.modelName)))].sort()
+            .map((modelName, index) => [modelName, boardCountModelPalette[index % boardCountModelPalette.length]])
+    );
 
     const createIntervalChartData = chart => {
         const boundaryLabels = createBoundaryLabels(chart.labels);
 
         return {
             boundaryLabels,
-            datasets: chart.series.map((series, seriesIndex) => ({
-                label: series.laneName,
+            datasets: chart.modelSeries.map(series => ({
+                label: series.modelName,
                 data: series.values.map((value, valueIndex) => ({
                     x: valueIndex + 0.5,
                     y: value
                 })),
-                backgroundColor: boardCountColors[series.laneName]
-                    || boardCountFallbackColors[seriesIndex % boardCountFallbackColors.length],
-                hoverBackgroundColor: boardCountColors[series.laneName]
-                    || boardCountFallbackColors[seriesIndex % boardCountFallbackColors.length],
+                backgroundColor: modelColorMap.get(series.modelName),
+                hoverBackgroundColor: modelColorMap.get(series.modelName),
                 borderWidth: 0,
                 stack: 'board-count'
             }))
@@ -208,11 +215,7 @@
                 resizeDelay: 100,
                 plugins: {
                     legend: {
-                        position: 'bottom',
-                        labels: {
-                            boxWidth: 10,
-                            font: { size: 13 }
-                        }
+                        display: false
                     },
                     tooltip: {
                         callbacks: {
@@ -222,10 +225,7 @@
                                 const end = intervalChart.boundaryLabels[bucketIndex + 1] || '';
                                 return end ? `${start} - ${end}` : start;
                             },
-                            beforeLabel: context => {
-                                const bucketIndex = Math.floor(context.parsed.x);
-                                return chart.series[context.datasetIndex]?.modelNames?.[bucketIndex] || '';
-                            },
+                            beforeLabel: context => context.dataset.label,
                             label: context => `Board Count: ${context.parsed.y}`
                         }
                     },
@@ -245,12 +245,14 @@
                             stepSize: 1,
                             callback: value => getBoundaryTickLabel(value, canvas, intervalChart.boundaryLabels)
                         },
-                        grid: { color: 'rgba(216,221,226,0.45)' }
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: 'rgba(216,221,226,0.55)' }
                     },
                     y: {
                         stacked: true,
                         beginAtZero: true,
-                        grid: { color: '#d8dde2' }
+                        grid: { display: false, drawTicks: false },
+                        border: { display: true, color: '#d8dde2' }
                     }
                 },
                 datasets: {
