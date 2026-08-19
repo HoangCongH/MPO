@@ -219,7 +219,9 @@
             const storagePrefix = `mpo-table-columns:${window.location.pathname.toLowerCase()}`;
 
             document.querySelectorAll('table').forEach((table, tableIndex) => {
-                if (!table.tHead || table.dataset.columnResizeInitialized === 'true') {
+                if (!table.tHead
+                    || table.dataset.columnResize === 'false'
+                    || table.dataset.columnResizeInitialized === 'true') {
                     return;
                 }
 

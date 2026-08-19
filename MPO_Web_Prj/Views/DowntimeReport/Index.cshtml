@@ -56,7 +56,7 @@
     }
 
     <div class="pp-report__table-wrap downtime-matrix-wrap @(lineRows.Count <= 4 ? "downtime-matrix-wrap--fit" : string.Empty)" data-report-batch-url="@Url.Action("Batch", "DowntimeReport")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-orientation="transposed" data-report-fixed-columns="2" data-report-columns="lineName,chipPickupErrorCount,chipPickupErrorTime,chipRecogErrorCount,chipRecogErrorTime,singleErrorStopCount,singleErrorStopTime,troubleStopCount,troubleStopTime,partExhaustStopCount,partExhaustStopTime">
-        <table class="pp-report__table pp-report__table--downtime" data-column-layout-version="downtime-transposed-v2" style="min-width: @(downtimeTableMinWidth)px;">
+        <table class="pp-report__table pp-report__table--downtime" data-column-layout-version="downtime-transposed-v3" data-column-resize="false" style="min-width: @(downtimeTableMinWidth)px;">
             <colgroup data-report-transposed-cols>
                 <col style="width: 120px;" />
                 <col style="width: 210px;" />

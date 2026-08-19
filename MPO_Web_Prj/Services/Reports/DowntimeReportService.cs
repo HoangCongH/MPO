@@ -52,27 +52,48 @@ public class DowntimeReportService : IDowntimeReportService
         NormalizeFilter(filter);
         var (startAt, endAt) = ReportQueryParameters.DateRange(filter.StartDate, filter.StartTime, filter.EndDate, filter.EndTime);
         const string sql = """
-            WITH grouped AS (
+            WITH normalized AS (
                 SELECT
-                    COALESCE(mm.line, '') AS "LineName",
-                    COALESCE(SUM(pr.count_cperr), 0)::bigint AS "ChipPickupErrorCount",
-                    COALESCE(SUM(pr.time_cperr), 0) AS "ChipPickupErrorTime",
-                    COALESCE(SUM(pr.count_crerr), 0)::bigint AS "ChipRecogErrorCount",
-                    COALESCE(SUM(pr.time_crerr), 0) AS "ChipRecogErrorTime",
-                    COALESCE(SUM(pr.count_scestop), 0)::bigint AS "SingleErrorStopCount",
-                    COALESCE(SUM(pr.time_scestop), 0) AS "SingleErrorStopTime",
-                    COALESCE(SUM(pr.count_trbl), 0)::bigint AS "TroubleStopCount",
-                    COALESCE(SUM(pr.time_trbl), 0) AS "TroubleStopTime",
-                    COALESCE(SUM(pr.count_pwait), 0)::bigint AS "PartExhaustStopCount",
-                    COALESCE(SUM(pr.time_pwait), 0) AS "PartExhaustStopTime",
-                    MAX(pr.report_date) AS "LatestReportDate"
+                    CASE
+                        WHEN regexp_replace(lower(btrim(COALESCE(mm.line, ''))), '[^a-z0-9]', '', 'g')
+                             IN ('line1', '1', 'line20', '20')
+                            THEN '20'
+                        ELSE btrim(COALESCE(mm.line, ''))
+                    END AS "LineName",
+                    pr.count_cperr,
+                    pr.time_cperr,
+                    pr.count_crerr,
+                    pr.time_crerr,
+                    pr.count_scestop,
+                    pr.time_scestop,
+                    pr.count_trbl,
+                    pr.time_trbl,
+                    pr.count_pwait,
+                    pr.time_pwait,
+                    pr.report_date
                 FROM production_reports pr
                 LEFT JOIN master_machines mm ON mm.id = pr.machine_id
                 WHERE pr.report_date IS NOT NULL
                   AND (@startAt IS NULL OR pr.report_date >= @startAt)
                   AND (@endAt IS NULL OR pr.report_date < @endAt)
-                  AND (@lineName IS NULL OR mm.line = @lineName)
-                GROUP BY mm.line
+            ),
+            grouped AS (
+                SELECT
+                    "LineName",
+                    COALESCE(SUM(count_cperr), 0)::bigint AS "ChipPickupErrorCount",
+                    COALESCE(SUM(time_cperr), 0) AS "ChipPickupErrorTime",
+                    COALESCE(SUM(count_crerr), 0)::bigint AS "ChipRecogErrorCount",
+                    COALESCE(SUM(time_crerr), 0) AS "ChipRecogErrorTime",
+                    COALESCE(SUM(count_scestop), 0)::bigint AS "SingleErrorStopCount",
+                    COALESCE(SUM(time_scestop), 0) AS "SingleErrorStopTime",
+                    COALESCE(SUM(count_trbl), 0)::bigint AS "TroubleStopCount",
+                    COALESCE(SUM(time_trbl), 0) AS "TroubleStopTime",
+                    COALESCE(SUM(count_pwait), 0)::bigint AS "PartExhaustStopCount",
+                    COALESCE(SUM(time_pwait), 0) AS "PartExhaustStopTime",
+                    MAX(report_date) AS "LatestReportDate"
+                FROM normalized
+                WHERE (@lineName IS NULL OR "LineName" = @lineName)
+                GROUP BY "LineName"
             )
             SELECT
                 "LineName", "ChipPickupErrorCount", "ChipPickupErrorTime", "ChipRecogErrorCount", "ChipRecogErrorTime",
@@ -115,7 +136,16 @@ public class DowntimeReportService : IDowntimeReportService
             .Select(machine => machine.line!)
             .Distinct().OrderBy(value => value)
             .ToListAsync(cancellationToken);
-        return ReportQueryParameters.WithFixedOptions(values.Select(value => new ReportSelectOption { Value = value, Text = value }).ToList(), null);
+        var canonicalValues = values
+            .Select(CanonicalizeLine)
+            .Where(value => value != null)
+            .Cast<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(value => int.TryParse(value, out var lineNumber) ? lineNumber : int.MaxValue)
+            .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
+            .Select(value => new ReportSelectOption { Value = value, Text = value })
+            .ToList();
+        return ReportQueryParameters.WithFixedOptions(canonicalValues, null);
     }
 
     private static ReportPagination CreatePagination(int totalRecords, bool exportAll) => new()
@@ -126,7 +156,15 @@ public class DowntimeReportService : IDowntimeReportService
     };
 
     private static void NormalizeFilter(DowntimeReportFilter filter) =>
-        filter.LineName = string.IsNullOrWhiteSpace(filter.LineName) ? null : filter.LineName.Trim();
+        filter.LineName = CanonicalizeLine(filter.LineName);
+
+    private static string? CanonicalizeLine(string? lineName)
+    {
+        if (string.IsNullOrWhiteSpace(lineName)) return null;
+        var trimmed = lineName.Trim();
+        var normalized = new string(trimmed.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        return normalized is "1" or "line1" or "20" or "line20" ? "20" : trimmed;
+    }
 
     private static DowntimeReportViewModel CreateDatabaseErrorViewModel(DowntimeReportFilter filter, Exception exception) => new()
     {

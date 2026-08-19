@@ -40,6 +40,8 @@ builder.Services.AddScoped<IOverallDashboardService, OverallDashboardService>();
 
 var app = builder.Build();
 
+await LineDataConsolidation.ApplyAsync(app.Services, app.Logger);
+
 app.Use(async (context, next) =>
 {
     try
