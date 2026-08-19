@@ -456,6 +456,67 @@ html.is-sidebar-collapsed .overall-dashboard,
   border-bottom: none !important;
 }
 
+.downtime-matrix-wrap {
+  margin-top: 0 !important;
+}
+
+.downtime-matrix-wrap--fit {
+  overflow-x: hidden !important;
+}
+
+.pp-report__table--downtime thead th:first-child,
+.pp-report__table--downtime .downtime-matrix__category {
+  left: 0;
+  min-width: 120px;
+  position: sticky;
+  width: 120px;
+}
+
+.pp-report__table--downtime thead th:nth-child(2),
+.pp-report__table--downtime .downtime-matrix__metric {
+  left: 120px;
+  min-width: 210px;
+  position: sticky;
+  width: 210px;
+}
+
+.pp-report__table--downtime thead th:first-child,
+.pp-report__table--downtime thead th:nth-child(2) {
+  z-index: 5;
+}
+
+.pp-report__table--downtime .downtime-matrix__metric {
+  background: #1d2645 !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  letter-spacing: normal;
+  padding: 10px 18px !important;
+  text-align: left;
+  text-transform: none;
+  z-index: 2;
+}
+
+.pp-report__table--downtime tbody td {
+  text-align: left;
+}
+
+.pp-report__table--downtime .downtime-matrix__category {
+  background: rgba(99, 102, 241, 0.16) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  border-right: 1px solid rgba(99, 102, 241, 0.36) !important;
+  color: #c7d2fe !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em;
+  padding: 10px 12px !important;
+  text-align: left;
+  text-transform: uppercase;
+  vertical-align: middle;
+  z-index: 3;
+}
+
 /* ==========================================================================
    Custom Select Override
    ========================================================================== */

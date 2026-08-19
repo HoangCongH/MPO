@@ -3,6 +3,13 @@
 @{
     ViewData["Title"] = "Downtime Report";
     Layout = "_DashboardLayout";
+    var lineRows = Model.Rows
+        .OrderBy(row => int.TryParse(row.LineName, out var lineNumber) ? lineNumber : int.MaxValue)
+        .ThenBy(row => row.LineName, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+    var downtimeTableMinWidth = lineRows.Count <= 4
+        ? 720
+        : 330 + (lineRows.Count * 150);
 }
 
 <section class="pp-report pp-report--table">
@@ -48,62 +55,76 @@
         </div>
     }
 
-    <div class="pp-report__header-actions">
-        <div class="pp-report__record-count">@Model.Pagination.TotalRecords records</div>
-    </div>
-
-    <div class="pp-report__table-wrap" data-report-batch-url="@Url.Action("Batch", "DowntimeReport")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-columns="lineName,chipPickupErrorCount,chipPickupErrorTime,chipRecogErrorCount,chipRecogErrorTime,singleErrorStopCount,singleErrorStopTime,troubleStopCount,troubleStopTime,partExhaustStopCount,partExhaustStopTime">
-        <table class="pp-report__table pp-report__table--downtime">
-            <colgroup>
-                <col style="width: 145px;" />
-                <col style="width: 155px;" />
-                <col style="width: 155px;" />
-                <col style="width: 155px;" />
-                <col style="width: 155px;" />
-                <col style="width: 165px;" />
-                <col style="width: 165px;" />
-                <col style="width: 150px;" />
-                <col style="width: 150px;" />
-                <col style="width: 165px;" />
-                <col style="width: 165px;" />
+    <div class="pp-report__table-wrap downtime-matrix-wrap @(lineRows.Count <= 4 ? "downtime-matrix-wrap--fit" : string.Empty)" data-report-batch-url="@Url.Action("Batch", "DowntimeReport")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-orientation="transposed" data-report-fixed-columns="2" data-report-columns="lineName,chipPickupErrorCount,chipPickupErrorTime,chipRecogErrorCount,chipRecogErrorTime,singleErrorStopCount,singleErrorStopTime,troubleStopCount,troubleStopTime,partExhaustStopCount,partExhaustStopTime">
+        <table class="pp-report__table pp-report__table--downtime" data-column-layout-version="downtime-transposed-v2" style="min-width: @(downtimeTableMinWidth)px;">
+            <colgroup data-report-transposed-cols>
+                <col style="width: 120px;" />
+                <col style="width: 210px;" />
+                @foreach (var _ in lineRows)
+                {
+                    <col />
+                }
             </colgroup>
             <thead>
-                <tr>
-                    <th>Line<br />Name</th>
-                    <th>Chip pickup error<br />(Count)</th>
-                    <th>Chip pickup error<br />(Time)</th>
-                    <th>Chip recog error<br />(Count)</th>
-                    <th>Chip recog error<br />(Time)</th>
-                    <th>Single error stop<br />(Count)</th>
-                    <th>Single error stop<br />(Time)</th>
-                    <th>Trouble stop<br />(Count)</th>
-                    <th>Trouble stop<br />(Time)</th>
-                    <th>Part exhaust stop<br />(Count)</th>
-                    <th>Part exhaust stop<br />(Time)</th>
+                <tr data-report-transposed-header>
+                    <th scope="col">Category</th>
+                    <th scope="col">Error</th>
+                    @foreach (var row in lineRows)
+                    {
+                        <th scope="col">@(row.LineName.StartsWith("Line", StringComparison.OrdinalIgnoreCase) ? row.LineName : $"Line {row.LineName}")</th>
+                    }
                 </tr>
             </thead>
             <tbody data-report-batch-rows>
-                @foreach (var row in Model.Rows)
+                @if (lineRows.Count > 0)
                 {
-                    <tr>
-                        <td>@row.LineName</td>
-                        <td>@row.ChipPickupErrorCount</td>
-                        <td>@row.ChipPickupErrorTime.ToString("N2")</td>
-                        <td>@row.ChipRecogErrorCount</td>
-                        <td>@row.ChipRecogErrorTime.ToString("N2")</td>
-                        <td>@row.SingleErrorStopCount</td>
-                        <td>@row.SingleErrorStopTime.ToString("N2")</td>
-                        <td>@row.TroubleStopCount</td>
-                        <td>@row.TroubleStopTime.ToString("N2")</td>
-                        <td>@row.PartExhaustStopCount</td>
-                        <td>@row.PartExhaustStopTime.ToString("N2")</td>
+                    <tr data-report-metric="chipPickupErrorCount">
+                        <th class="downtime-matrix__category" scope="rowgroup" rowspan="5">COUNT</th>
+                        <th class="downtime-matrix__metric" scope="row">Chip pickup error</th>
+                        @foreach (var row in lineRows) { <td>@row.ChipPickupErrorCount</td> }
+                    </tr>
+                    <tr data-report-metric="chipRecogErrorCount">
+                        <th class="downtime-matrix__metric" scope="row">Chip recog error</th>
+                        @foreach (var row in lineRows) { <td>@row.ChipRecogErrorCount</td> }
+                    </tr>
+                    <tr data-report-metric="singleErrorStopCount">
+                        <th class="downtime-matrix__metric" scope="row">Single error stop</th>
+                        @foreach (var row in lineRows) { <td>@row.SingleErrorStopCount</td> }
+                    </tr>
+                    <tr data-report-metric="troubleStopCount">
+                        <th class="downtime-matrix__metric" scope="row">Trouble stop</th>
+                        @foreach (var row in lineRows) { <td>@row.TroubleStopCount</td> }
+                    </tr>
+                    <tr data-report-metric="partExhaustStopCount">
+                        <th class="downtime-matrix__metric" scope="row">Part exhaust stop</th>
+                        @foreach (var row in lineRows) { <td>@row.PartExhaustStopCount</td> }
+                    </tr>
+                    <tr data-report-metric="chipPickupErrorTime">
+                        <th class="downtime-matrix__category" scope="rowgroup" rowspan="5">TIME</th>
+                        <th class="downtime-matrix__metric" scope="row">Chip pickup error</th>
+                        @foreach (var row in lineRows) { <td>@row.ChipPickupErrorTime.ToString("N2")</td> }
+                    </tr>
+                    <tr data-report-metric="chipRecogErrorTime">
+                        <th class="downtime-matrix__metric" scope="row">Chip recog error</th>
+                        @foreach (var row in lineRows) { <td>@row.ChipRecogErrorTime.ToString("N2")</td> }
+                    </tr>
+                    <tr data-report-metric="singleErrorStopTime">
+                        <th class="downtime-matrix__metric" scope="row">Single error stop</th>
+                        @foreach (var row in lineRows) { <td>@row.SingleErrorStopTime.ToString("N2")</td> }
+                    </tr>
+                    <tr data-report-metric="troubleStopTime">
+                        <th class="downtime-matrix__metric" scope="row">Trouble stop</th>
+                        @foreach (var row in lineRows) { <td>@row.TroubleStopTime.ToString("N2")</td> }
+                    </tr>
+                    <tr data-report-metric="partExhaustStopTime">
+                        <th class="downtime-matrix__metric" scope="row">Part exhaust stop</th>
+                        @foreach (var row in lineRows) { <td>@row.PartExhaustStopTime.ToString("N2")</td> }
                     </tr>
                 }
-
-                @if (Model.Rows.Count == 0)
+                else
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="11">
+                        <td class="pp-report__empty" colspan="2">
                             No downtime data found.
                         </td>
                     </tr>

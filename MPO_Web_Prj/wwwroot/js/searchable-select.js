@@ -207,6 +207,40 @@ function initReportBatchLoaders() {
         };
 
         const appendRows = rows => {
+            if (tableWrap.dataset.reportOrientation === 'transposed') {
+                const table = tableWrap.querySelector('table');
+                const header = tableWrap.querySelector('[data-report-transposed-header]');
+                const colGroup = tableWrap.querySelector('[data-report-transposed-cols]');
+                const metricRows = Array.from(tableWrap.querySelectorAll('[data-report-metric]'));
+                tableWrap.querySelector('.pp-report__empty')?.closest('tr')?.remove();
+
+                rows.forEach(row => {
+                    const col = document.createElement('col');
+                    colGroup?.appendChild(col);
+
+                    const th = document.createElement('th');
+                    th.scope = 'col';
+                    const lineName = String(row.lineName || '');
+                    th.textContent = /^line/i.test(lineName) ? lineName : `Line ${lineName}`;
+                    header?.appendChild(th);
+
+                    metricRows.forEach(metricRow => {
+                        const column = metricRow.dataset.reportMetric;
+                        const td = document.createElement('td');
+                        td.textContent = formatValue(column, row[column]);
+                        metricRow.appendChild(td);
+                    });
+                });
+
+                if (table && header) {
+                    const fixedColumns = Number(tableWrap.dataset.reportFixedColumns || 1);
+                    const lineColumns = Math.max(0, header.cells.length - fixedColumns);
+                    const fixedWidth = fixedColumns === 2 ? 330 : 240;
+                    table.style.minWidth = `${lineColumns <= 4 ? 720 : fixedWidth + (lineColumns * 150)}px`;
+                }
+                return;
+            }
+
             rows.forEach(row => {
                 const tr = document.createElement('tr');
                 columns.forEach(column => {

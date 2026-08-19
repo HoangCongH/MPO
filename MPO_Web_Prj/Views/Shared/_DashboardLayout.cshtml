@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -225,7 +225,8 @@
 
                 table.dataset.columnResizeInitialized = 'true';
                 const headers = Array.from(table.tHead.rows[0].cells);
-                const key = `${storagePrefix}:${table.className || 'table'}:${tableIndex}`;
+                const layoutVersion = table.dataset.columnLayoutVersion || '1';
+                const key = `${storagePrefix}:${table.className || 'table'}:${tableIndex}:${layoutVersion}`;
                 let colGroup = table.querySelector(':scope > colgroup');
 
                 if (!colGroup) {
