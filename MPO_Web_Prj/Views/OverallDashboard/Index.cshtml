@@ -2,7 +2,7 @@
 @using System.Text.Json
 
 @{
-    ViewData["Title"] = "Overall Dashboard";
+    ViewData["Title"] = "OVERALL DASHBOARD";
     Layout = "_DashboardLayout";
 
     var boardPayload = Model.BoardProduced.Charts.Select(chart => new
@@ -24,6 +24,10 @@
 
     var errorStopColors = new[] { "#6366F1", "#38BDF8", "#22C55E", "#F59E0B", "#EF4444", "#8B5CF6" };
     var errorStopTotal = Model.ErrorStopTime.Sum(slice => slice.Value);
+    var selectedLine = Model.BoardProduced.Filter.Line1
+        ?? Model.BoardProduced.Charts.FirstOrDefault()?.LineName
+        ?? Model.BoardProduced.LineOptions.FirstOrDefault()?.Value
+        ?? "-";
     var dashboardPayload = new
     {
         charts = boardPayload,
@@ -35,7 +39,7 @@
 
 <section class="pp-report overall-dashboard">
     <div class="overall-dashboard__page-heading">
-        <h1 class="pp-report__title">Overall Dashboard (per line)</h1>
+        <h1 class="pp-report__title" id="overallDashboardHeading">OVERALL DASHBOARD - Line <span id="overallDashboardLine">@selectedLine</span></h1>
     </div>
 
     <form class="pp-report__filter board-count-filter"
@@ -52,8 +56,8 @@
         <div class="pp-report__field">
             <label asp-for="BoardProduced.Filter.Shift">Time</label>
             <select asp-for="BoardProduced.Filter.Shift" name="Shift" id="overallDashboardTime" required>
-                <option value="1">Shift 1: 6:00 - 18:00</option>
-                <option value="2">Shift 2: 18:00 - 6:00 next day</option>
+                <option value="1">Shift 1: 06:00 - 18:00</option>
+                <option value="2">Shift 2: 18:00 - 06:00 next day</option>
                 <option value="3">All Day</option>
                 <option value="4">Last Hour</option>
             </select>
@@ -394,7 +398,16 @@
     const overallErrorStopLegend = document.getElementById('overallErrorStopLegend');
     const overallDashboardForm = document.querySelector('.overall-dashboard .board-count-filter');
     const overallAutoRefreshInput = overallDashboardForm?.querySelector('input[name="AutoRefresh"]');
+    const overallLineSelect = overallDashboardForm?.querySelector('select[name="Line1"]');
+    const overallDashboardLine = document.getElementById('overallDashboardLine');
     let overallRefreshInFlight = false;
+
+    const updateOverallDashboardLine = () => {
+        if (!overallDashboardLine) return;
+        overallDashboardLine.textContent = overallLineSelect?.value || '-';
+    };
+
+    overallLineSelect?.addEventListener('change', updateOverallDashboardLine);
 
     const createOverallBoardChart = (canvas, chart) => {
         const intervalChart = createOverallIntervalChartData(chart);
@@ -525,6 +538,7 @@
             if (!response.ok) throw new Error('Dashboard refresh failed.');
             const data = await response.json();
             renderOverallBoardCharts(data.charts || []);
+            updateOverallDashboardLine();
             renderErrorStop(data.errorStop || { labels: [], values: [] });
             renderOverallRows(overallFeederRows, data.feeders || [], ['feederId', 'feederTable', 'feederSlot', 'side', 'partName', 'totalPickup', 'totalPlacement', 'ppm'], 'No feeder data found.');
             renderOverallRows(overallNozzleRows, data.nozzles || [], ['nozzleSlot', 'head', 'partName', 'totalPickup', 'totalPlacement', 'ppm'], 'No nozzle data found.');

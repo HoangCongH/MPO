@@ -196,7 +196,9 @@ function initReportBatchLoaders() {
             if (value === null || value === undefined) return '';
             if (column === 'startTime' || column === 'endTime') {
                 const date = new Date(value);
-                return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+                if (Number.isNaN(date.getTime())) return value;
+                const pad = part => String(part).padStart(2, '0');
+                return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
             }
             if (column.includes('Time') || column === 'ppm' || column === 'scrapRatio') {
                 return Number(value).toLocaleString(undefined, { maximumFractionDigits: 2 });
