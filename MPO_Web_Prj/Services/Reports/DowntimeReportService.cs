@@ -54,12 +54,7 @@ public class DowntimeReportService : IDowntimeReportService
         const string sql = """
             WITH normalized AS (
                 SELECT
-                    CASE
-                        WHEN regexp_replace(lower(btrim(COALESCE(mm.line, ''))), '[^a-z0-9]', '', 'g')
-                             IN ('line1', '1', 'line20', '20')
-                            THEN '20'
-                        ELSE btrim(COALESCE(mm.line, ''))
-                    END AS "LineName",
+                    COALESCE(mm.line, '') AS "LineName",
                     pr.count_cperr,
                     pr.time_cperr,
                     pr.count_crerr,
@@ -139,16 +134,12 @@ public class DowntimeReportService : IDowntimeReportService
             .Select(machine => machine.line!)
             .Distinct().OrderBy(value => value)
             .ToListAsync(cancellationToken);
-        var canonicalValues = values
-            .Select(CanonicalizeLine)
-            .Where(value => value != null)
-            .Cast<string>()
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+        var lineOptions = values
             .OrderBy(value => int.TryParse(value, out var lineNumber) ? lineNumber : int.MaxValue)
             .ThenBy(value => value, StringComparer.OrdinalIgnoreCase)
             .Select(value => new ReportSelectOption { Value = value, Text = value })
             .ToList();
-        return ReportQueryParameters.WithFixedOptions(canonicalValues, null);
+        return ReportQueryParameters.WithFixedOptions(lineOptions, null);
     }
 
     private static ReportPagination CreatePagination(int totalRecords, bool exportAll) => new()
@@ -159,15 +150,7 @@ public class DowntimeReportService : IDowntimeReportService
     };
 
     private static void NormalizeFilter(DowntimeReportFilter filter) =>
-        filter.LineName = CanonicalizeLine(filter.LineName);
-
-    private static string? CanonicalizeLine(string? lineName)
-    {
-        if (string.IsNullOrWhiteSpace(lineName)) return null;
-        var trimmed = lineName.Trim();
-        var normalized = new string(trimmed.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
-        return normalized is "1" or "line1" or "20" or "line20" ? "20" : trimmed;
-    }
+        filter.LineName = string.IsNullOrWhiteSpace(filter.LineName) ? null : filter.LineName;
 
     private static DowntimeReportViewModel CreateDatabaseErrorViewModel(DowntimeReportFilter filter, Exception exception) => new()
     {

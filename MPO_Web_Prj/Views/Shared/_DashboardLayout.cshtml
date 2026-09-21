@@ -153,7 +153,9 @@
             });
 
             document.querySelectorAll('form.pp-report__filter').forEach(form => {
-                const storageKey = `mpo-filter:@(isProMode ? "pro" : "u01"):${window.location.pathname.toLowerCase()}`;
+                const path = window.location.pathname.toLowerCase();
+                const lineSourceVersion = path.startsWith('/downtimereport') ? ':db-lines-v2' : '';
+                const storageKey = `mpo-filter:@(isProMode ? "pro" : "u01"):${path}${lineSourceVersion}`;
                 const hasQuery = window.location.search.length > 1;
                 const requiredDateTimeFields = ['StartDate', 'StartTime', 'EndDate', 'EndTime'];
 
@@ -187,6 +189,9 @@
                             if (field.tagName === 'SELECT'
                                 && value
                                 && !Array.from(field.options).some(option => option.value === value)) {
+                                if (field.name === 'Filter.LineName') {
+                                    continue;
+                                }
                                 field.add(new Option(value, value, true, true));
                             }
 
