@@ -17,7 +17,8 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
         try
         {
             var lineOptions = await BuildOptionsAsync(dbContext.master_machines.AsNoTracking()
-                .Where(machine => machine.line != null && machine.line != string.Empty).Select(machine => machine.line!), cancellationToken);
+                .Where(machine => machine.line != null && machine.line != string.Empty
+                    && machine.production_reports.Any()).Select(machine => machine.line!), cancellationToken);
             var machineQuery = BuildMachineOptionQuery(filter);
             var machineOptions = await BuildOptionsAsync(machineQuery
                 .Where(machine => machine.machine_name != null && machine.machine_name != string.Empty).Select(machine => machine.machine_name!), cancellationToken);
@@ -89,6 +90,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
                 INNER JOIN production_reports pr ON pr.id = nl.report_id
                 LEFT JOIN master_machines mm ON mm.id = pr.machine_id
                 WHERE pr.report_date IS NOT NULL
+                  AND (CASE WHEN @isPro THEN pr.file_name LIKE '%.pro' ELSE pr.file_name NOT LIKE '%.pro' END)
                   AND (@startAt IS NULL OR pr.report_date >= @startAt)
                   AND (@endAt IS NULL OR pr.report_date < @endAt)
                   AND (@lineName IS NULL OR mm.line = @lineName)
@@ -106,6 +108,7 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
             LIMIT @take OFFSET @offset
             """;
         var sqlRows = await dbContext.Database.SqlQueryRaw<PickPlacementByNozzleSqlRow>(sql,
+            ReportQueryParameters.Boolean("isPro", dbContext.IsProMode),
             ReportQueryParameters.Timestamp("startAt", startAt),
             ReportQueryParameters.Timestamp("endAt", endAt),
             ReportQueryParameters.Text("lineName", filter.LineName),
@@ -163,7 +166,8 @@ public class PickPlacementByNozzleService : IPickPlacementByNozzleService
 
     private IQueryable<MPO_Web_Prj.Models.master_machine> BuildMachineOptionQuery(PickPlacementByNozzleFilter filter)
     {
-        var query = dbContext.master_machines.AsNoTracking().AsQueryable();
+        var query = dbContext.master_machines.AsNoTracking()
+            .Where(machine => machine.production_reports.Any());
         return filter.LineName == null ? query : query.Where(machine => machine.line == filter.LineName);
     }
     private static IQueryable<MPO_Web_Prj.Models.nozzle_log> ApplyMachineFilters(IQueryable<MPO_Web_Prj.Models.nozzle_log> query, PickPlacementByNozzleFilter filter)

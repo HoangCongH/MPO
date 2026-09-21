@@ -107,6 +107,7 @@ public class ProductionReportService : IProductionReportService
                 FROM production_reports pr
                 LEFT JOIN master_machines mm ON mm.id = pr.machine_id
                 WHERE pr.report_date IS NOT NULL
+                  AND (CASE WHEN @isPro THEN pr.file_name LIKE '%.pro' ELSE pr.file_name NOT LIKE '%.pro' END)
                   AND (cardinality(@machineIds) = 0 OR pr.machine_id = ANY(@machineIds))
                   AND (@modelName IS NULL OR pr.lot_name = @modelName)
                   AND (@startAt IS NULL OR pr.report_date >= @startAt)
@@ -120,6 +121,7 @@ public class ProductionReportService : IProductionReportService
             LIMIT @take OFFSET @offset
             """;
         var sqlRows = await dbContext.Database.SqlQueryRaw<ProductionReportSqlRow>(sql,
+            ReportQueryParameters.Boolean("isPro", dbContext.IsProMode),
             ReportQueryParameters.TextArray("machineIds", machineIds),
             ReportQueryParameters.Text("modelName", filter.ModelName),
             ReportQueryParameters.Timestamp("startAt", startAt),
@@ -147,12 +149,13 @@ public class ProductionReportService : IProductionReportService
             Id = machine.id,
             Line = machine.line,
             MachineName = machine.machine_name,
-            Stage = machine.stage
+            Stage = machine.stage,
+            HasModeReport = machine.production_reports.Any()
         }).ToListAsync(cancellationToken);
 
     private static IReadOnlyList<ReportSelectOption> BuildLineOptions(IEnumerable<MachineSelection> machines)
     {
-        var values = machines.Select(machine => machine.Line).Where(value => !string.IsNullOrWhiteSpace(value))
+        var values = machines.Where(machine => machine.HasModeReport).Select(machine => machine.Line).Where(value => !string.IsNullOrWhiteSpace(value))
             .Select(value => value!).Distinct().OrderBy(value => value)
             .Select(value => new ReportSelectOption { Value = value, Text = value }).ToList();
         return ReportQueryParameters.WithFixedOptions(values, null);
@@ -229,5 +232,6 @@ public class ProductionReportService : IProductionReportService
         public string? Line { get; init; }
         public string? MachineName { get; init; }
         public short? Stage { get; init; }
+        public bool HasModeReport { get; init; }
     }
 }

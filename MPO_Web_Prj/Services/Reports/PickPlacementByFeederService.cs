@@ -28,7 +28,8 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
             var lineOptions = await BuildOptionsAsync(
                 dbContext.master_machines
                     .AsNoTracking()
-                    .Where(machine => machine.line != null && machine.line != string.Empty)
+                    .Where(machine => machine.line != null && machine.line != string.Empty
+                        && machine.production_reports.Any())
                     .Select(machine => machine.line!),
                 cancellationToken);
             var machineOptionQuery = BuildMachineOptionQuery(filter);
@@ -201,6 +202,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                 INNER JOIN production_reports pr ON pr.id = fl.report_id
                 LEFT JOIN master_machines mm ON mm.id = pr.machine_id
                 WHERE pr.report_date IS NOT NULL
+                  AND (CASE WHEN @isPro THEN pr.file_name LIKE '%.pro' ELSE pr.file_name NOT LIKE '%.pro' END)
                   AND (@startAt IS NULL OR pr.report_date >= @startAt)
                   AND (@endAt IS NULL OR pr.report_date < @endAt)
                   AND (@lineName IS NULL OR mm.line = @lineName)
@@ -222,6 +224,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
         var parameters = new object[]
         {
+            ReportQueryParameters.Boolean("isPro", dbContext.IsProMode),
             NullableTimestamp("startAt", startAt),
             NullableTimestamp("endAt", endAt),
             NullableText("lineName", filter.LineName),
@@ -282,7 +285,8 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
 
     private IQueryable<MPO_Web_Prj.Models.master_machine> BuildMachineOptionQuery(PickPlacementByFeederFilter filter)
     {
-        var query = dbContext.master_machines.AsNoTracking().AsQueryable();
+        var query = dbContext.master_machines.AsNoTracking()
+            .Where(machine => machine.production_reports.Any());
 
         if (!string.IsNullOrWhiteSpace(filter.LineName))
         {

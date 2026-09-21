@@ -7,10 +7,15 @@ namespace MPO_Web_Prj.Data;
 
 public partial class AppDbContext : DbContext
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options)
+    private readonly IHttpContextAccessor httpContextAccessor;
+
+    public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor httpContextAccessor)
         : base(options)
     {
+        this.httpContextAccessor = httpContextAccessor;
     }
+
+    public bool IsProMode => ReportMode.IsPro(httpContextAccessor.HttpContext);
 
     public virtual DbSet<feeder_log> feeder_logs { get; set; }
 
@@ -24,6 +29,10 @@ public partial class AppDbContext : DbContext
     {
         modelBuilder.Entity<feeder_log>(entity =>
         {
+            entity.HasQueryFilter(log => log.report != null &&
+                (IsProMode
+                    ? EF.Functions.Like(log.report.file_name!, "%.pro")
+                    : !EF.Functions.Like(log.report.file_name!, "%.pro")));
             entity.HasKey(e => e.id).HasName("feeder_logs_pkey");
 
             entity.HasIndex(e => new { e.report_id, e.f_add }, "idx_feeder_report_f_add");
@@ -55,6 +64,10 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<nozzle_log>(entity =>
         {
+            entity.HasQueryFilter(log => log.report != null &&
+                (IsProMode
+                    ? EF.Functions.Like(log.report.file_name!, "%.pro")
+                    : !EF.Functions.Like(log.report.file_name!, "%.pro")));
             entity.HasKey(e => e.id).HasName("nozzle_logs_pkey");
 
             entity.HasIndex(e => new { e.report_id, e.head_num, e.nh_add }, "idx_nozzle_report_head");
@@ -72,6 +85,9 @@ public partial class AppDbContext : DbContext
 
         modelBuilder.Entity<production_report>(entity =>
         {
+            entity.HasQueryFilter(report => IsProMode
+                ? EF.Functions.Like(report.file_name!, "%.pro")
+                : !EF.Functions.Like(report.file_name!, "%.pro"));
             entity.HasKey(e => e.id).HasName("production_reports_pkey");
 
             entity.HasIndex(e => e.report_date, "idx_report_date");

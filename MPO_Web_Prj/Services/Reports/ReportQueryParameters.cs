@@ -44,6 +44,9 @@ internal static class ReportQueryParameters
     internal static NpgsqlParameter Integer(string name, int value) =>
         new(name, NpgsqlDbType.Integer) { Value = value };
 
+    internal static NpgsqlParameter Boolean(string name, bool value) =>
+        new(name, NpgsqlDbType.Boolean) { Value = value };
+
     internal static int ClampOptionLimit(int limit) => Math.Clamp(limit, 1, OptionLimit);
 
     internal static ReportBatch<TRow> Batch<TRow>(IReadOnlyList<TRow> rows, long totalRecords, int offset)

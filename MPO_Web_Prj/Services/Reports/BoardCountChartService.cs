@@ -27,7 +27,8 @@ public class BoardCountChartService : IBoardCountChartService
         {
             var lineNames = await dbContext.master_machines
                 .AsNoTracking()
-                .Where(machine => machine.line != null && machine.line != string.Empty)
+                .Where(machine => machine.line != null && machine.line != string.Empty
+                    && machine.production_reports.Any())
                 .Select(machine => machine.line!)
                 .Distinct()
                 .OrderBy(line => line)

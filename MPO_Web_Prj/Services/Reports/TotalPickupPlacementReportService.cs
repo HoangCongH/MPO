@@ -60,6 +60,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
                 FROM production_reports pr
                 LEFT JOIN master_machines mm ON mm.id = pr.machine_id
                 WHERE pr.report_date IS NOT NULL
+                  AND (CASE WHEN @isPro THEN pr.file_name LIKE '%.pro' ELSE pr.file_name NOT LIKE '%.pro' END)
                   AND (@startAt IS NULL OR pr.report_date >= @startAt)
                   AND (@endAt IS NULL OR pr.report_date < @endAt)
                   AND (@lineName IS NULL OR mm.line = @lineName)
@@ -72,6 +73,7 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
             """;
 
         var sqlRows = await dbContext.Database.SqlQueryRaw<TotalPickupPlacementReportSqlRow>(sql,
+            ReportQueryParameters.Boolean("isPro", dbContext.IsProMode),
             ReportQueryParameters.Timestamp("startAt", startAt),
             ReportQueryParameters.Timestamp("endAt", endAt),
             ReportQueryParameters.Text("lineName", filter.LineName),
@@ -91,7 +93,8 @@ public class TotalPickupPlacementReportService : ITotalPickupPlacementReportServ
     private async Task<IReadOnlyList<ReportSelectOption>> BuildLineOptionsAsync(CancellationToken cancellationToken)
     {
         var values = await dbContext.master_machines.AsNoTracking()
-            .Where(machine => machine.line != null && machine.line != string.Empty)
+            .Where(machine => machine.line != null && machine.line != string.Empty
+                && machine.production_reports.Any())
             .Select(machine => machine.line!).Distinct().OrderBy(value => value).ToListAsync(cancellationToken);
         return ReportQueryParameters.WithFixedOptions(values.Select(value => new ReportSelectOption { Value = value, Text = value }).ToList(), null);
     }

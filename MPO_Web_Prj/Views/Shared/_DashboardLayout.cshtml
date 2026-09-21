@@ -1,3 +1,7 @@
+@using MPO_Web_Prj.Data
+@{
+    var isProMode = ReportMode.IsPro(Context);
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,6 +42,14 @@
         </a>
 
         <nav class="app-sidebar__nav">
+            <form class="app-sidebar__mode" asp-controller="Dashboard" asp-action="SwitchMode" method="post" aria-label="Report mode">
+                <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
+                <span class="app-sidebar__mode-label">Report mode</span>
+                <div class="app-sidebar__mode-options">
+                    <button type="submit" name="mode" value="u01" class="@(isProMode ? "" : "is-active")" aria-pressed="@(!isProMode).ToString().ToLowerInvariant()">u01</button>
+                    <button type="submit" name="mode" value="pro" class="@(isProMode ? "is-active" : "")" aria-pressed="@isProMode.ToString().ToLowerInvariant()">pro</button>
+                </div>
+            </form>
             <a class="app-sidebar__home" asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">
                 <i data-lucide="layout-dashboard"></i> Dashboard
             </a>
@@ -141,7 +153,7 @@
             });
 
             document.querySelectorAll('form.pp-report__filter').forEach(form => {
-                const storageKey = `mpo-filter:${window.location.pathname.toLowerCase()}`;
+                const storageKey = `mpo-filter:@(isProMode ? "pro" : "u01"):${window.location.pathname.toLowerCase()}`;
                 const hasQuery = window.location.search.length > 1;
                 const requiredDateTimeFields = ['StartDate', 'StartTime', 'EndDate', 'EndTime'];
 
