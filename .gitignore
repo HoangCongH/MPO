@@ -16,6 +16,7 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
+[.]codex-build/
 [Ll]og/
 [Ll]ogs/
 
@@ -33,6 +34,29 @@ ScaffoldingReadMe.txt
 
 # dotenv environment variables file
 .env
+.env.*
+!.env.example
+
+# Local ASP.NET configuration and credentials
+MPO_Web_Prj/appsettings*.json
+!MPO_Web_Prj/appsettings.example.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.cer
+*.crt
+
+# Local data and backups
+*.db
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+*.dump
+*.tmp
+*.temp
 
 # Publish
 publish/

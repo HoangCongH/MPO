@@ -46,8 +46,8 @@
                 <input type="hidden" name="returnUrl" value="@Context.Request.Path" />
                 <span class="app-sidebar__mode-label">Report mode</span>
                 <div class="app-sidebar__mode-options">
-                    <button type="submit" name="mode" value="u01" class="@(isProMode ? "" : "is-active")" aria-pressed="@(!isProMode).ToString().ToLowerInvariant()">u01</button>
-                    <button type="submit" name="mode" value="pro" class="@(isProMode ? "is-active" : "")" aria-pressed="@isProMode.ToString().ToLowerInvariant()">pro</button>
+                    <button type="submit" name="mode" value="u01" class="@(isProMode ? "" : "is-active")" aria-pressed="@(!isProMode).ToString().ToLowerInvariant()">NPM</button>
+                    <button type="submit" name="mode" value="pro" class="@(isProMode ? "is-active" : "")" aria-pressed="@isProMode.ToString().ToLowerInvariant()">CM</button>
                 </div>
             </form>
             <a class="app-sidebar__home" asp-controller="Dashboard" asp-action="Index" data-nav-controller="Dashboard" data-nav-action="Index">
