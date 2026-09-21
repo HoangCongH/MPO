@@ -186,7 +186,7 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                     COALESCE(mm.line, '') AS "LineName",
                     COALESCE(mm.machine_name, '') AS "MachineName",
                     COALESCE(mm.stage::text, '') AS "Stage",
-                    COALESCE(fl.blk_serial, '') AS "FeederId",
+                    COALESCE(CASE WHEN @isPro THEN NULL ELSE fl.blk_serial END, '') AS "FeederId",
                     COALESCE(fl.f_add, '') AS "FeederAdd",
                     fl.fs_add AS "FeederSubAdd",
                     COALESCE(SUM(fl.f_pickup_qty), 0)::integer AS "PickupCount",
@@ -211,7 +211,8 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
                   AND (@partName IS NULL OR fl.part_name = @partName)
                   AND (@feederId IS NULL OR fl.blk_serial = @feederId)
                   AND (@feederSlot IS NULL OR fl.f_add = @feederSlot)
-                GROUP BY fl.part_name, mm.line, mm.machine_name, mm.stage, fl.blk_serial, fl.f_add, fl.fs_add
+                GROUP BY fl.part_name, mm.line, mm.machine_name, mm.stage,
+                    CASE WHEN @isPro THEN NULL ELSE fl.blk_serial END, fl.f_add, fl.fs_add
             )
             SELECT
                 "PartName", "LineName", "MachineName", "Stage", "FeederId", "FeederAdd", "FeederSubAdd",
@@ -437,13 +438,13 @@ public class PickPlacementByFeederService : IPickPlacementByFeederService
         return decimal.Round(1_000_000m * (1 - ((decimal)placementCount / pickupCount)), 2);
     }
 
-    private static void NormalizeFilter(PickPlacementByFeederFilter filter)
+    private void NormalizeFilter(PickPlacementByFeederFilter filter)
     {
         filter.LineName = Normalize(filter.LineName);
         filter.PartName = Normalize(filter.PartName);
         filter.MachineName = Normalize(filter.MachineName);
         filter.Stage = Normalize(filter.Stage);
-        filter.FeederId = Normalize(filter.FeederId);
+        filter.FeederId = dbContext.IsProMode ? null : Normalize(filter.FeederId);
         filter.FeederSlot = Normalize(filter.FeederSlot);
     }
 

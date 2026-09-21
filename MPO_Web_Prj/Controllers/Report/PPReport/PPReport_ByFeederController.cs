@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MPO_Web_Prj.Models.Report;
+using MPO_Web_Prj.Data;
 using MPO_Web_Prj.Services.Reports;
 
 namespace MPO_Web_Prj.Controllers.Report.PPReport
@@ -36,9 +37,12 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
             filter.ExportAll = true;
             filter.IsApplied = ReportFilterGuard.HasRequiredDateTime(filter);
             var viewModel = await reportService.GetReportAsync(filter, cancellationToken);
+            var isProMode = ReportMode.IsPro(HttpContext);
             var html = new System.Text.StringBuilder();
             html.AppendLine("<html><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">");
-            html.AppendLine("<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Feeder ID</th><th>Table</th><th>Feeder slot</th><th>Side</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
+            html.AppendLine(isProMode
+                ? "<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Table</th><th>Feeder slot</th><th>Side</th><th>Pickup count</th><th>Placement count</th><th>Total miss</th><th>Scrap ratio</th></tr>"
+                : "<tr><th>Line Name</th><th>Machine Name</th><th>Stage</th><th>Part Name</th><th>Feeder ID</th><th>Table</th><th>Feeder slot</th><th>Side</th><th>Pickup count</th><th>Placement count</th><th>Pickup miss</th><th>Recog miss</th><th>Height miss</th><th>Drop miss</th><th>Mount miss</th><th>Transfer miss</th><th>Scrap ratio</th></tr>");
 
             foreach (var row in viewModel.Rows)
             {
@@ -47,18 +51,24 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
                 html.Append($"<td>{Encode(row.MachineName)}</td>");
                 html.Append($"<td>{Encode(row.Stage)}</td>");
                 html.Append($"<td>{Encode(row.PartName)}</td>");
-                html.Append($"<td>{Encode(row.FeederId)}</td>");
+                if (!isProMode)
+                {
+                    html.Append($"<td>{Encode(row.FeederId)}</td>");
+                }
                 html.Append($"<td>{Encode(row.FeederTable)}</td>");
                 html.Append($"<td>{Encode(row.FeederSlot)}</td>");
                 html.Append($"<td>{Encode(row.Side)}</td>");
                 html.Append($"<td>{row.PickupCount}</td>");
                 html.Append($"<td>{row.PlacementCount}</td>");
                 html.Append($"<td>{row.PickupMiss}</td>");
+                if (!isProMode)
+                {
                 html.Append($"<td>{row.RecogMiss}</td>");
                 html.Append($"<td>{row.HeightMiss}</td>");
                 html.Append($"<td>{row.DropMiss}</td>");
                 html.Append($"<td>{row.MountMiss}</td>");
                 html.Append($"<td>{row.TransferMiss}</td>");
+                }
                 html.Append($"<td>{row.ScrapRatio:N0}</td>");
                 html.AppendLine("</tr>");
             }
@@ -95,7 +105,8 @@ namespace MPO_Web_Prj.Controllers.Report.PPReport
             [FromForm] PickPlacementByFeederFilter filter,
             CancellationToken cancellationToken)
         {
-            if (field is not ("partName" or "feederId" or "feederSlot"))
+            if (field is not ("partName" or "feederId" or "feederSlot")
+                || (ReportMode.IsPro(HttpContext) && field == "feederId"))
             {
                 return BadRequest(new { error = "Unknown filter field." });
             }

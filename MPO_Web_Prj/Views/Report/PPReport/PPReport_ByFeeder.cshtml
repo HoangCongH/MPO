@@ -1,8 +1,10 @@
 @model MPO_Web_Prj.Models.Report.PickPlacementByFeederViewModel
+@using MPO_Web_Prj.Data
 
 @{
     ViewData["Title"] = "Pick-Placement report by Feeder";
     Layout = "_DashboardLayout";
+    var isProMode = ReportMode.IsPro(Context);
 }
 
 <section class="pp-report pp-report--table">
@@ -33,13 +35,16 @@
                     data-lazy-field="partName"></select>
         </div>
 
-        <div class="pp-report__field">
-            <label asp-for="Filter.FeederId">Feeder ID</label>
-            <select asp-for="Filter.FeederId"
-                    asp-items="@(new SelectList(Model.FeederIdOptions, "Value", "Text", Model.Filter.FeederId))"
-                    data-lazy-options-url="@Url.Action("Options", "PPReport_ByFeeder")"
-                    data-lazy-field="feederId"></select>
-        </div>
+        @if (!isProMode)
+        {
+            <div class="pp-report__field">
+                <label asp-for="Filter.FeederId">Feeder ID</label>
+                <select asp-for="Filter.FeederId"
+                        asp-items="@(new SelectList(Model.FeederIdOptions, "Value", "Text", Model.Filter.FeederId))"
+                        data-lazy-options-url="@Url.Action("Options", "PPReport_ByFeeder")"
+                        data-lazy-field="feederId"></select>
+            </div>
+        }
 
         <div class="pp-report__field">
             <label asp-for="Filter.FeederSlot">Feeder slot</label>
@@ -90,18 +95,24 @@
                 <col style="width: 160px;" />
                 <col style="width: 90px;" />
                 <col style="width: 150px;" />
+                @if (!isProMode)
+                {
                 <col style="width: 190px;" />
+                }
                 <col style="width: 80px;" />
                 <col style="width: 125px;" />
                 <col style="width: 80px;" />
                 <col style="width: 120px;" />
                 <col style="width: 140px;" />
                 <col style="width: 120px;" />
+                @if (!isProMode)
+                {
                 <col style="width: 120px;" />
                 <col style="width: 120px;" />
                 <col style="width: 120px;" />
                 <col style="width: 120px;" />
                 <col style="width: 135px;" />
+                }
                 <col style="width: 150px;" />
             </colgroup>
             <thead>
@@ -110,18 +121,24 @@
                     <th>Machine<br />Name</th>
                     <th>Stage</th>
                     <th>Part<br />Name</th>
+                    @if (!isProMode)
+                    {
                     <th>Feeder<br />ID</th>
+                    }
                     <th>Table</th>
                     <th>Feeder<br />slot</th>
                     <th>Side</th>
                     <th>Pickup<br />count</th>
                     <th>Placement<br />count</th>
-                    <th>Pickup<br />miss</th>
+                    <th>@(isProMode ? "Total" : "Pickup")<br />miss</th>
+                    @if (!isProMode)
+                    {
                     <th>Recog<br />miss</th>
                     <th>Height<br />miss</th>
                     <th>Drop<br />miss</th>
                     <th>Mount<br />miss</th>
                     <th>Transfer<br />miss</th>
+                    }
                     <th>Scrap<br />ratio</th>
                 </tr>
             </thead>
@@ -133,18 +150,24 @@
                         <td>@row.MachineName</td>
                         <td>@row.Stage</td>
                         <td>@row.PartName</td>
+                        @if (!isProMode)
+                        {
                         <td>@row.FeederId</td>
+                        }
                         <td>@row.FeederTable</td>
                         <td>@row.FeederSlot</td>
                         <td>@row.Side</td>
                         <td>@row.PickupCount</td>
                         <td>@row.PlacementCount</td>
                         <td>@row.PickupMiss</td>
+                        @if (!isProMode)
+                        {
                         <td>@row.RecogMiss</td>
                         <td>@row.HeightMiss</td>
                         <td>@row.DropMiss</td>
                         <td>@row.MountMiss</td>
                         <td>@row.TransferMiss</td>
+                        }
                         <td>
                             @row.ScrapRatio.ToString("N0")
                             @if (row.HasPickupWithoutPlacement)
@@ -158,7 +181,7 @@
                 @if (Model.Rows.Count == 0)
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="17">No feeder data found.</td>
+                        <td class="pp-report__empty" colspan="@(isProMode ? 11 : 17)">No feeder data found.</td>
                     </tr>
                 }
             </tbody>
@@ -177,10 +200,9 @@
         let nextOffset = Number(tableWrap.dataset.nextOffset || 0);
         let hasMore = true;
         let loading = false;
-        const columns = [
-            'lineName', 'machineName', 'stage', 'partName', 'feederId', 'feederTable', 'feederSlot', 'side',
-            'pickupCount', 'placementCount', 'pickupMiss', 'recogMiss', 'heightMiss', 'dropMiss', 'mountMiss', 'transferMiss'
-        ];
+        const columns = @Html.Raw(isProMode
+            ? "['lineName', 'machineName', 'stage', 'partName', 'feederTable', 'feederSlot', 'side', 'pickupCount', 'placementCount', 'pickupMiss']"
+            : "['lineName', 'machineName', 'stage', 'partName', 'feederId', 'feederTable', 'feederSlot', 'side', 'pickupCount', 'placementCount', 'pickupMiss', 'recogMiss', 'heightMiss', 'dropMiss', 'mountMiss', 'transferMiss']");
 
         const addRows = rows => {
             rows.forEach(row => {

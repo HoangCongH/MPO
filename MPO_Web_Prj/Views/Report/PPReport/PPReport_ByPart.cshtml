@@ -1,8 +1,10 @@
 @model MPO_Web_Prj.Models.Report.PickPlacementByPartViewModel
+@using MPO_Web_Prj.Data
 
 @{
     ViewData["Title"] = "Pick-Placement report by Part";
     Layout = "_DashboardLayout";
+    var isProMode = ReportMode.IsPro(Context);
 }
 
 <section class="pp-report pp-report--table">
@@ -75,7 +77,7 @@
         <div class="pp-report__record-count">@Model.Pagination.TotalRecords records</div>
     </div>
 
-    <div class="pp-report__table-wrap" data-report-batch-url="@Url.Action("Batch", "PPReport_ByPart")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-columns="lineName,machineName,stage,partName,pickupCount,placementCount,pickupMiss,recogMiss,heightMiss,dropMiss,mountMiss,transferMiss,scrapRatio">
+    <div class="pp-report__table-wrap" data-report-batch-url="@Url.Action("Batch", "PPReport_ByPart")" data-next-offset="@Model.Rows.Count" data-has-more="@(Model.Pagination.TotalRecords > Model.Rows.Count)" data-report-columns="@(isProMode ? "lineName,machineName,stage,partName,pickupCount,placementCount,pickupMiss,scrapRatio" : "lineName,machineName,stage,partName,pickupCount,placementCount,pickupMiss,recogMiss,heightMiss,dropMiss,mountMiss,transferMiss,scrapRatio")">
         <table class="pp-report__table pp-report__table--part">
             <colgroup>
                 <col style="width: 145px;" />
@@ -85,11 +87,14 @@
                 <col style="width: 135px;" />
                 <col style="width: 145px;" />
                 <col style="width: 135px;" />
+                @if (!isProMode)
+                {
                 <col style="width: 135px;" />
                 <col style="width: 135px;" />
                 <col style="width: 135px;" />
                 <col style="width: 135px;" />
                 <col style="width: 145px;" />
+                }
                 <col style="width: 145px;" />
             </colgroup>
             <thead>
@@ -100,12 +105,15 @@
                     <th>Part<br />name</th>
                     <th>Pickup<br />count</th>
                     <th>Placement<br />count</th>
-                    <th>Pickup<br />miss</th>
+                    <th>@(isProMode ? "Total" : "Pickup")<br />miss</th>
+                    @if (!isProMode)
+                    {
                     <th>Recog<br />miss</th>
                     <th>Height<br />miss</th>
                     <th>Drop<br />miss</th>
                     <th>Mount<br />miss</th>
                     <th>Transfer<br />miss</th>
+                    }
                     <th>Scrap<br />ratio</th>
                 </tr>
             </thead>
@@ -120,11 +128,14 @@
                         <td>@row.PickupCount</td>
                         <td>@row.PlacementCount</td>
                         <td>@row.PickupMiss</td>
+                        @if (!isProMode)
+                        {
                         <td>@row.RecogMiss</td>
                         <td>@row.HeightMiss</td>
                         <td>@row.DropMiss</td>
                         <td>@row.MountMiss</td>
                         <td>@row.TransferMiss</td>
+                        }
                         <td>
                             @row.ScrapRatio.ToString("N0")
                             @if (row.HasPickupWithoutPlacement)
@@ -138,7 +149,7 @@
                 @if (Model.Rows.Count == 0)
                 {
                     <tr>
-                        <td class="pp-report__empty" colspan="13">No feeder data found.</td>
+                        <td class="pp-report__empty" colspan="@(isProMode ? 8 : 13)">No feeder data found.</td>
                     </tr>
                 }
             </tbody>

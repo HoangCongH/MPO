@@ -75,9 +75,12 @@
             <a asp-controller="PPReport_ByNozzle" asp-action="Index" data-nav-controller="PPReport_ByNozzle" data-nav-action="Index">
                 <i data-lucide="crosshair"></i> Pick-Placement by Nozzle
             </a>
-            <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">
-                <i data-lucide="clock"></i> Cycle Time Report
-            </a>
+            @if (!isProMode)
+            {
+                <a asp-controller="CycleTimeReport" asp-action="Index" data-nav-controller="CycleTimeReport" data-nav-action="Index">
+                    <i data-lucide="clock"></i> Cycle Time Report
+                </a>
+            }
             <a asp-controller="DowntimeReport" asp-action="Index" data-nav-controller="DowntimeReport" data-nav-action="Index">
                 <i data-lucide="alert-circle"></i> Downtime Report
             </a>
@@ -233,7 +236,7 @@
         })();
 
         (() => {
-            const storagePrefix = `mpo-table-columns:${window.location.pathname.toLowerCase()}`;
+            const storagePrefix = `mpo-table-columns:@(isProMode ? "pro" : "u01"):${window.location.pathname.toLowerCase()}`;
 
             document.querySelectorAll('table').forEach((table, tableIndex) => {
                 if (!table.tHead
